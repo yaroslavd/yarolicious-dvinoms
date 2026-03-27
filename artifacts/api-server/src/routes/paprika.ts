@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { validatePaprikaCredentials } from "../lib/paprika";
 
+
 const router: IRouter = Router();
 
 router.get("/paprika/credentials", async (_req, res): Promise<void> => {
@@ -31,7 +32,15 @@ router.post("/paprika/credentials", async (req, res): Promise<void> => {
     return;
   }
 
-  const encryptedPassword = Buffer.from(parsed.data.password, "utf-8").toString("base64");
+  const email = parsed.data.email.trim();
+  const password = parsed.data.password.trim();
+  const encryptedPassword = Buffer.from(password, "utf-8").toString("base64");
+
+  const isValid = await validatePaprikaCredentials(email, password);
+  if (!isValid) {
+    res.status(400).json({ error: "Invalid Paprika credentials — please double-check your email and password." });
+    return;
+  }
 
   const existing = await db.select().from(paprikaCredentialsTable).limit(1);
 
@@ -39,20 +48,20 @@ router.post("/paprika/credentials", async (req, res): Promise<void> => {
     await db
       .update(paprikaCredentialsTable)
       .set({
-        email: parsed.data.email,
+        email,
         encryptedPassword,
         updatedAt: new Date(),
       })
       .where(eq(paprikaCredentialsTable.id, existing[0].id));
   } else {
     await db.insert(paprikaCredentialsTable).values({
-      email: parsed.data.email,
+      email,
       encryptedPassword,
     });
   }
 
   res.json(
-    SetPaprikaCredentialsResponse.parse({ configured: true, email: parsed.data.email })
+    SetPaprikaCredentialsResponse.parse({ configured: true, email })
   );
 });
 
