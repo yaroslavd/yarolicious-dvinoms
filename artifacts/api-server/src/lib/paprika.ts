@@ -102,7 +102,7 @@ export async function syncRecipeToPaprika(
 
   const authHeader = "Basic " + Buffer.from(`${email}:${password}`).toString("base64");
 
-  const response = await fetch("https://www.paprikaapp.com/api/v1/sync/recipe/", {
+  const response = await fetch("https://www.paprikaapp.com/api/v2/sync/recipe/", {
     method: "POST",
     headers: {
       Authorization: authHeader,
@@ -133,7 +133,7 @@ export async function validatePaprikaCredentials(
 ): Promise<boolean> {
   const authHeader = "Basic " + Buffer.from(`${email}:${password}`).toString("base64");
   try {
-    const response = await fetch("https://www.paprikaapp.com/api/v1/sync/recipes/", {
+    const response = await fetch("https://www.paprikaapp.com/api/v2/sync/recipes/", {
       headers: { Authorization: authHeader },
     });
     return response.ok;
