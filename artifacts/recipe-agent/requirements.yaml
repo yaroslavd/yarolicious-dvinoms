@@ -1,0 +1,19 @@
+packages:
+  "framer-motion": "For fluid page transitions and layout animations"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation integration with react-hook-form"
+  "zod": "For form schema validation"
+  "date-fns": "For formatting dates"
+
+images:
+  - path: "artifacts/recipe-agent/public/images/empty-plate.png"
+    description: "A beautifully illustrated top-down view of an empty ceramic plate on a wooden table with some scattered herbs around it. Warm terracotta and sage green colors. Minimalist, clean, culinary aesthetic."
+    aspect_ratio: "1:1"
+  - path: "artifacts/recipe-agent/public/images/hero-kitchen.png"
+    description: "An abstract, soft-focus illustration of a warm, inviting modern kitchen counter with a cutting board, fresh vegetables, and beautiful morning light. Earthy tones, terracotta, cream."
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react for data fetching.
+  - Relying on wouter for routing.
+  - Using Shadcn UI components available in the workspace.

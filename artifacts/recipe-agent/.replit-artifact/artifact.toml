@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Recipe Import Agent"
+version = "1.0.0"
+id = "artifacts/recipe-agent"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25413
+
+[services.development]
+run = "pnpm --filter @workspace/recipe-agent run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/recipe-agent", "run", "build" ]
+publicDir = "artifacts/recipe-agent/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25413"
+BASE_PATH = "/"

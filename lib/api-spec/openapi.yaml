@@ -1,15 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Recipe Import Agent API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: recipes
+    description: Recipe management
+  - name: paprika
+    description: Paprika integration
+  - name: ai
+    description: AI recipe generation
 paths:
   /healthz:
     get:
@@ -24,6 +29,205 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /recipes:
+    get:
+      operationId: listRecipes
+      tags: [recipes]
+      summary: List all saved recipes
+      responses:
+        "200":
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+    post:
+      operationId: createRecipe
+      tags: [recipes]
+      summary: Create a recipe manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeInput"
+      responses:
+        "201":
+          description: Created recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+
+  /recipes/{id}:
+    get:
+      operationId: getRecipe
+      tags: [recipes]
+      summary: Get a single recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recipe detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateRecipe
+      tags: [recipes]
+      summary: Update a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeInput"
+      responses:
+        "200":
+          description: Updated recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRecipe
+      tags: [recipes]
+      summary: Delete a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /recipes/import-url:
+    post:
+      operationId: importRecipeFromUrl
+      tags: [recipes]
+      summary: Import a recipe from a URL (supports any cooking site)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportUrlBody"
+      responses:
+        "200":
+          description: Imported recipe (not yet saved)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeInput"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/generate:
+    post:
+      operationId: generateRecipe
+      tags: [ai]
+      summary: Generate a recipe using AI from a description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRecipeBody"
+      responses:
+        "200":
+          description: AI-generated recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeInput"
+
+  /recipes/{id}/export-to-paprika:
+    post:
+      operationId: exportRecipeToPaprika
+      tags: [paprika]
+      summary: Export a saved recipe to Paprika
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Export result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaprikaExportResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /paprika/credentials:
+    get:
+      operationId: getPaprikaCredentials
+      tags: [paprika]
+      summary: Check if Paprika credentials are configured
+      responses:
+        "200":
+          description: Credential status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaprikaCredentials"
+    post:
+      operationId: setPaprikaCredentials
+      tags: [paprika]
+      summary: Set Paprika account credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaprikaCredentialsInput"
+      responses:
+        "200":
+          description: Credentials saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaprikaCredentials"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +238,154 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    RecipeInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ingredients:
+          type: string
+        directions:
+          type: string
+        servings:
+          type: ["string", "null"]
+        totalTime:
+          type: ["string", "null"]
+        prepTime:
+          type: ["string", "null"]
+        cookTime:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        nutritionalInfo:
+          type: ["string", "null"]
+        source:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        categories:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+      required:
+        - name
+        - ingredients
+        - directions
+
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ingredients:
+          type: string
+        directions:
+          type: string
+        servings:
+          type: ["string", "null"]
+        totalTime:
+          type: ["string", "null"]
+        prepTime:
+          type: ["string", "null"]
+        cookTime:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        nutritionalInfo:
+          type: ["string", "null"]
+        source:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        categories:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+        exportedToPaprika:
+          type: boolean
+        paprikaUid:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - ingredients
+        - directions
+        - exportedToPaprika
+        - createdAt
+        - updatedAt
+
+    ImportUrlBody:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    GenerateRecipeBody:
+      type: object
+      properties:
+        description:
+          type: string
+        preferences:
+          type: ["string", "null"]
+      required:
+        - description
+
+    PaprikaExportResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        paprikaUid:
+          type: ["string", "null"]
+      required:
+        - success
+        - message
+
+    PaprikaCredentials:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        email:
+          type: ["string", "null"]
+      required:
+        - configured
+
+    PaprikaCredentialsInput:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
