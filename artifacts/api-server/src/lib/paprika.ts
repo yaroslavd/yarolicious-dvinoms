@@ -102,7 +102,7 @@ export async function syncRecipeToPaprika(
 
   const authHeader = "Basic " + Buffer.from(`${email}:${password}`).toString("base64");
 
-  const response = await fetch("https://www.paprikaapp.com/api/v2/sync/recipe/", {
+  const response = await fetch(`https://www.paprikaapp.com/api/v2/sync/recipe/${uid}/`, {
     method: "POST",
     headers: {
       Authorization: authHeader,

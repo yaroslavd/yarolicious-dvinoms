@@ -86,10 +86,18 @@ export default function RecipeDetail() {
     
     try {
       const res = await exportMutation.mutateAsync({ id });
-      toast({ 
-        title: "Exported successfully!", 
-        description: res.message 
-      });
+      if (res.success) {
+        toast({ 
+          title: "Exported to Paprika!", 
+          description: res.message 
+        });
+      } else {
+        toast({ 
+          title: "Export failed", 
+          description: res.message, 
+          variant: "destructive" 
+        });
+      }
     } catch (err: any) {
       toast({ title: "Export failed", description: err.message, variant: "destructive" });
     }
