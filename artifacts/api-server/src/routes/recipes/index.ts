@@ -17,6 +17,8 @@ import {
   ExportRecipeToPaprikaParams,
   ExportRecipeToPaprikaResponse,
 } from "@workspace/api-zod";
+import zlib from "zlib";
+import { randomUUID } from "crypto";
 import { scrapeRecipeFromUrl, generateRecipeWithAI } from "../../lib/recipe-scraper";
 import { syncRecipeToPaprika } from "../../lib/paprika";
 
@@ -95,6 +97,62 @@ router.post("/recipes", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(GetRecipeResponse.parse(recipe));
+});
+
+router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
+  const params = GetRecipeParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [recipe] = await db
+    .select()
+    .from(recipesTable)
+    .where(eq(recipesTable.id, params.data.id));
+
+  if (!recipe) {
+    res.status(404).json({ error: "Recipe not found" });
+    return;
+  }
+
+  const uid = randomUUID();
+  const paprikaRecipe = {
+    uid,
+    name: recipe.name,
+    description: recipe.description ?? "",
+    ingredients: recipe.ingredients,
+    directions: recipe.directions,
+    servings: recipe.servings ?? "",
+    total_time: recipe.totalTime ?? "",
+    prep_time: recipe.prepTime ?? "",
+    cook_time: recipe.cookTime ?? "",
+    notes: recipe.notes ?? "",
+    nutritional_info: recipe.nutritionalInfo ?? "",
+    source: recipe.source ?? "",
+    source_url: recipe.sourceUrl ?? "",
+    image_url: recipe.imageUrl ?? "",
+    categories: recipe.categories ? recipe.categories.split(",").map((c: string) => c.trim()) : [],
+    difficulty: recipe.difficulty ?? "",
+    rating: 0,
+    on_favorites: false,
+    in_trash: false,
+    hash: uid,
+    photo: "",
+    photo_hash: null,
+    photo_large: null,
+    scale: null,
+  };
+
+  const jsonBuf = Buffer.from(JSON.stringify(paprikaRecipe), "utf-8");
+  const gzipped = await new Promise<Buffer>((resolve, reject) => {
+    zlib.gzip(jsonBuf, (err, result) => (err ? reject(err) : resolve(result)));
+  });
+
+  const safeName = recipe.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${safeName}.paprikarecipe"`);
+  res.send(gzipped);
 });
 
 router.get("/recipes/:id", async (req, res): Promise<void> => {

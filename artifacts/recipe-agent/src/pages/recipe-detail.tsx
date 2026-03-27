@@ -5,7 +5,7 @@ import { usePaprikaCredentials } from "@/hooks/use-paprika";
 import { RecipeForm } from "@/components/recipe-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Users, ArrowUpRight, Edit3, Trash2, ChevronLeft, Loader2, ExternalLink } from "lucide-react";
+import { Clock, Users, ArrowUpRight, Edit3, Trash2, ChevronLeft, Loader2, ExternalLink, Download, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   AlertDialog,
@@ -201,9 +201,9 @@ export default function RecipeDetail() {
             </div>
 
             {/* Export Card */}
-            <div className="shrink-0 bg-background/80 backdrop-blur-sm border border-border p-4 rounded-2xl shadow-sm min-w-[200px]">
+            <div className="shrink-0 bg-background/80 backdrop-blur-sm border border-border p-4 rounded-2xl shadow-sm min-w-[200px] space-y-2">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-foreground">Paprika Sync</span>
+                <span className="text-sm font-semibold text-foreground">Send to Paprika</span>
                 {recipe.exportedToPaprika ? (
                   <span className="w-2 h-2 rounded-full bg-secondary" title="Synced" />
                 ) : (
@@ -216,8 +216,21 @@ export default function RecipeDetail() {
                 className="w-full bg-[#EA5B4E] hover:bg-[#D44E42] text-white shadow-md shadow-[#EA5B4E]/20"
               >
                 {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-                {recipe.exportedToPaprika ? "Synced" : "Export to Paprika"}
+                {recipe.exportedToPaprika ? "Synced" : "Sync via API"}
               </Button>
+              <a
+                href={`${import.meta.env.BASE_URL}api/recipes/${id}/paprika-file`}
+                download
+                className="w-full"
+              >
+                <Button variant="outline" className="w-full" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download File
+                </Button>
+              </a>
+              <p className="text-[10px] text-muted-foreground text-center leading-snug">
+                Open the .paprikarecipe file on any device to import
+              </p>
             </div>
           </div>
 
