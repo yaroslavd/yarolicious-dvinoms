@@ -21,6 +21,24 @@ function nowTimestamp(): string {
   return new Date().toISOString().replace("T", " ").slice(0, 19);
 }
 
+async function fetchImageAsBase64(
+  url: string
+): Promise<{ data: string; hash: string } | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const data = buf.toString("base64");
+    const hash = createHash("sha256").update(buf).digest("hex");
+    return { data, hash };
+  } catch {
+    return null;
+  }
+}
+
 function makeMultipartBody(
   gzipped: Buffer,
   boundary: string
@@ -83,6 +101,17 @@ export async function syncRecipeToPaprika(
   const uid = randomUUID();
   const created = nowTimestamp();
 
+  // Download and embed image if available
+  let photo: string | null = null;
+  let photoHash: string | null = null;
+  if (recipe.imageUrl) {
+    const img = await fetchImageAsBase64(recipe.imageUrl);
+    if (img) {
+      photo = img.data;
+      photoHash = img.hash;
+    }
+  }
+
   const paprikaRecipe = {
     uid,
     name: recipe.name,
@@ -97,17 +126,17 @@ export async function syncRecipeToPaprika(
     source: recipe.source ?? "",
     source_url: recipe.sourceUrl ?? "",
     image_url: recipe.imageUrl ?? null,
-    categories: [] as string[], // category UIDs — we don't have them, so leave empty
+    categories: [] as string[],
     difficulty: recipe.difficulty ?? "",
     rating: 0,
-    on_favorites: 0,   // must be integer per Paprika v1 API
-    photo: null,
-    photo_hash: null,
+    on_favorites: 0,
+    photo,
+    photo_hash: photoHash,
     photo_large: null,
     scale: null,
     deleted: false,
     created,
-    hash: "",          // filled in below
+    hash: "",
   };
 
   // Hash = SHA-256 of the uid (consistent with reverse-engineered format)
