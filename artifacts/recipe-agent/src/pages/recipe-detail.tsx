@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useRecipe, useUpdateRecipe, useDeleteRecipe, useExportToPaprika } from "@/hooks/use-recipes";
+import { useRecipeComplianceScores } from "@/hooks/use-dietary";
 import { usePaprikaCredentials } from "@/hooks/use-paprika";
 import { RecipeForm } from "@/components/recipe-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Users, ArrowUpRight, Edit3, Trash2, ChevronLeft, Loader2, ExternalLink, Download, Sparkles } from "lucide-react";
+import { Clock, Users, ArrowUpRight, Edit3, Trash2, ChevronLeft, Loader2, ExternalLink, Download, Sparkles, Salad } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   AlertDialog,
@@ -18,7 +19,47 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { RecipeInput } from "@workspace/api-client-react";
+import type { RecipeInput, StoredComplianceScore } from "@workspace/api-client-react";
+
+function getScoreColor(score: number) {
+  if (score >= 80) return { bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-100 dark:bg-emerald-900/30" };
+  if (score >= 60) return { bar: "bg-yellow-400", text: "text-yellow-700 dark:text-yellow-400", badge: "bg-yellow-100 dark:bg-yellow-900/30" };
+  if (score >= 40) return { bar: "bg-orange-400", text: "text-orange-700 dark:text-orange-400", badge: "bg-orange-100 dark:bg-orange-900/30" };
+  return { bar: "bg-red-400", text: "text-red-700 dark:text-red-400", badge: "bg-red-100 dark:bg-red-900/30" };
+}
+
+function ComplianceSection({ scores }: { scores: StoredComplianceScore[] }) {
+  if (scores.length === 0) return null;
+
+  return (
+    <div className="mt-12 space-y-4">
+      <h3 className="text-2xl font-serif font-bold text-primary flex items-center gap-2">
+        <Salad className="w-6 h-6" />
+        Dietary Compliance
+      </h3>
+      <div className="grid gap-3">
+        {scores.map((score) => {
+          const colors = getScoreColor(score.score);
+          return (
+            <div key={score.profileId} className="p-4 rounded-xl border border-border/60 bg-background/60">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-sm text-foreground">{score.profileName}</span>
+                <span className={`text-sm font-bold ${colors.text}`}>{score.score}%</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
+                <div
+                  className={`h-full rounded-full transition-all ${colors.bar}`}
+                  style={{ width: `${score.score}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{score.reason}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function RecipeDetail() {
   const [, params] = useRoute("/recipe/:id");
@@ -30,6 +71,7 @@ export default function RecipeDetail() {
 
   const { data: recipe, isLoading, isError } = useRecipe(id);
   const { data: paprikaCreds } = usePaprikaCredentials();
+  const { data: complianceScores, isLoading: complianceLoading } = useRecipeComplianceScores(id);
   
   const updateMutation = useUpdateRecipe();
   const deleteMutation = useDeleteRecipe();
@@ -170,7 +212,6 @@ export default function RecipeDetail() {
           </div>
         ) : (
           <div className="w-full h-48 relative bg-accent/20 flex items-center justify-center">
-            {/* abstract hero background comment */}
             <img 
               src={`${import.meta.env.BASE_URL}images/hero-kitchen.png`} 
               alt="Kitchen Hero"
@@ -279,13 +320,22 @@ export default function RecipeDetail() {
                   </a>
                 </div>
               )}
+
+              {/* Compliance Section on left column */}
+              {complianceLoading ? (
+                <div className="mt-12 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Computing compliance…
+                </div>
+              ) : complianceScores && complianceScores.length > 0 ? (
+                <ComplianceSection scores={complianceScores} />
+              ) : null}
             </div>
 
             <div className="lg:col-span-2">
               <h3 className="text-2xl font-serif font-bold text-primary mb-6">Directions</h3>
               <div className="space-y-8 font-sans">
                 {recipe.directions.split('\n').filter(Boolean).map((dir, i) => {
-                  // Check if line looks like a step number e.g. "1."
                   const match = dir.match(/^(\d+[\.\)])\s*(.*)/);
                   const isStepNum = !!match;
                   const text = isStepNum ? match[2] : dir;

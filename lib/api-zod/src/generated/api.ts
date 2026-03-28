@@ -216,6 +216,148 @@ export const ExportRecipeToPaprikaResponse = zod.object({
 });
 
 /**
+ * @summary List all dietary profiles
+ */
+export const ListDietaryProfilesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListDietaryProfilesResponse = zod.array(
+  ListDietaryProfilesResponseItem,
+);
+
+/**
+ * @summary Create a dietary profile
+ */
+export const CreateDietaryProfileBody = zod.object({
+  name: zod.string(),
+  description: zod.string(),
+});
+
+/**
+ * @summary Update a dietary profile
+ */
+export const UpdateDietaryProfileParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateDietaryProfileBody = zod.object({
+  name: zod.string(),
+  description: zod.string(),
+});
+
+export const UpdateDietaryProfileResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a dietary profile
+ */
+export const DeleteDietaryProfileParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Compute compliance score for a recipe against a profile
+ */
+export const ComputeComplianceScoreBody = zod.object({
+  recipeId: zod.number(),
+  profileId: zod.number(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  profileDescription: zod.string(),
+});
+
+export const ComputeComplianceScoreResponse = zod.object({
+  score: zod.number(),
+  reason: zod.string(),
+});
+
+/**
+ * @summary Get stored compliance scores for a recipe
+ */
+export const GetRecipeComplianceScoresParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetRecipeComplianceScoresResponseItem = zod.object({
+  id: zod.number(),
+  recipeId: zod.number(),
+  profileId: zod.number(),
+  profileName: zod.string(),
+  score: zod.number(),
+  reason: zod.string(),
+  updatedAt: zod.date(),
+});
+export const GetRecipeComplianceScoresResponse = zod.array(
+  GetRecipeComplianceScoresResponseItem,
+);
+
+/**
+ * @summary Get compliance scores for all recipes (for recipe cards)
+ */
+export const GetBulkComplianceScoresResponseItem = zod.object({
+  id: zod.number(),
+  recipeId: zod.number(),
+  profileId: zod.number(),
+  profileName: zod.string(),
+  score: zod.number(),
+  reason: zod.string(),
+  updatedAt: zod.date(),
+});
+export const GetBulkComplianceScoresResponse = zod.array(
+  GetBulkComplianceScoresResponseItem,
+);
+
+/**
+ * @summary Get dietary suggestions for a recipe against selected profiles
+ */
+export const GetDietarySuggestionsBody = zod.object({
+  recipe: zod.object({
+    name: zod.string(),
+    description: zod.string().nullish(),
+    ingredients: zod.string(),
+    directions: zod.string(),
+    servings: zod.string().nullish(),
+    totalTime: zod.string().nullish(),
+    prepTime: zod.string().nullish(),
+    cookTime: zod.string().nullish(),
+    notes: zod.string().nullish(),
+    nutritionalInfo: zod.string().nullish(),
+    source: zod.string().nullish(),
+    sourceUrl: zod.string().nullish(),
+    imageUrl: zod.string().nullish(),
+    categories: zod.string().nullish(),
+    difficulty: zod.string().nullish(),
+  }),
+  profiles: zod.array(
+    zod.object({
+      name: zod.string(),
+      description: zod.string(),
+    }),
+  ),
+});
+
+export const GetDietarySuggestionsResponse = zod.object({
+  suggestions: zod.array(
+    zod.object({
+      field: zod.string(),
+      original: zod.string(),
+      suggested: zod.string(),
+      reason: zod.string(),
+      profileName: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Check if Paprika credentials are configured
  */
 export const GetPaprikaCredentialsResponse = zod.object({

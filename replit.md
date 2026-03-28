@@ -102,3 +102,33 @@ The `api-server` package uses **Vitest** for automated testing:
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+## Features
+
+### Recipe Import Agent (`artifacts/recipe-agent`)
+
+- **My Recipes**: Browse saved recipes with compliance score indicators per dietary profile
+- **AI Generate**: Generate recipes via AI with a "Who's eating this?" profile selector; shows dietary suggestions after generation
+- **Import URL**: Import recipes from any food website with a "Who's eating this?" profile selector; shows dietary suggestions after extraction
+- **Recipe Detail**: Full recipe view with a "Dietary Compliance" section listing each profile's score (0-100%) and AI-generated reason
+- **Settings**: 
+  - Dietary Profiles card — create/edit/delete named profiles (e.g. "Me", "Sarah") with free-text dietary needs
+  - Paprika Integration — link Paprika account for recipe export/sync
+  - Categorize Recipes — AI-powered Paprika category suggestions
+
+### Database Schema
+
+- `recipes` — saved recipes
+- `paprika_credentials` — encrypted Paprika credentials
+- `dietary_profiles` — named dietary profiles with descriptions
+- `recipe_compliance_scores` — AI-computed compliance scores (0-100) with reasons per recipe+profile pair
+
+### API Routes (`artifacts/api-server`)
+
+- `GET/POST /api/dietary-profiles` — list/create dietary profiles
+- `PATCH/DELETE /api/dietary-profiles/:id` — update/delete a profile
+- `GET /api/recipes/compliance-scores/bulk` — all compliance scores (for recipe cards)
+- `GET /api/recipes/:id/compliance-scores` — compliance scores for a single recipe
+- `POST /api/recipes/compliance-score` — compute/recompute a compliance score
+- `POST /api/recipes/dietary-suggestions` — get AI dietary suggestions for a recipe+profiles
+- Compliance scores are auto-computed when a recipe is saved or a profile is created/updated

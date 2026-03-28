@@ -1,22 +1,30 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useImportRecipe, useCreateRecipe } from "@/hooks/use-recipes";
+import { useGetDietarySuggestions, useDietaryProfiles } from "@/hooks/use-dietary";
 import { RecipeForm } from "@/components/recipe-form";
+import { ProfileSelector } from "@/components/profile-selector";
+import { DietarySuggestionsPanel } from "@/components/dietary-suggestions-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Link2, Loader2, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import type { RecipeInput } from "@workspace/api-client-react";
+import type { RecipeInput, DietarySuggestion } from "@workspace/api-client-react";
 
 export default function ImportRecipe() {
   const [url, setUrl] = useState("");
   const [importedData, setImportedData] = useState<RecipeInput | null>(null);
+  const [selectedProfileIds, setSelectedProfileIds] = useState<number[]>([]);
+  const [suggestions, setSuggestions] = useState<DietarySuggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
   const importMutation = useImportRecipe();
   const createMutation = useCreateRecipe();
+  const getSuggestionsMutation = useGetDietarySuggestions();
+  const { data: profiles } = useDietaryProfiles();
 
   const handleExtract = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +33,34 @@ export default function ImportRecipe() {
     try {
       const data = await importMutation.mutateAsync({ data: { url } });
       setImportedData(data);
+      setSuggestions([]);
+
+      if (selectedProfileIds.length > 0 && profiles) {
+        setSuggestionsLoading(true);
+        try {
+          const selectedProfiles = profiles
+            .filter((p) => selectedProfileIds.includes(p.id))
+            .map((p) => ({ name: p.name, description: p.description }));
+
+          const result = await getSuggestionsMutation.mutateAsync({
+            data: {
+              recipe: {
+                name: data.name,
+                ingredients: data.ingredients,
+                directions: data.directions,
+                description: data.description,
+              },
+              profiles: selectedProfiles,
+            },
+          });
+          setSuggestions(result.suggestions as DietarySuggestion[]);
+        } catch {
+          // Suggestions are optional — silently skip
+        } finally {
+          setSuggestionsLoading(false);
+        }
+      }
+
       toast({
         title: "Recipe Extracted!",
         description: "Review and edit the details before saving.",
@@ -62,11 +98,21 @@ export default function ImportRecipe() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Review Recipe</h1>
           <p className="text-muted-foreground mt-2">Make any adjustments before saving to your collection.</p>
         </div>
+
+        {suggestionsLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground p-4 border border-border/50 rounded-2xl">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Getting dietary suggestions…
+          </div>
+        ) : suggestions.length > 0 ? (
+          <DietarySuggestionsPanel suggestions={suggestions} />
+        ) : null}
+
         <RecipeForm 
           initialData={importedData} 
           onSubmit={handleSave} 
           isSubmitting={createMutation.isPending}
-          onCancel={() => setImportedData(null)}
+          onCancel={() => { setImportedData(null); setSuggestions([]); }}
         />
       </motion.div>
     );
@@ -85,7 +131,6 @@ export default function ImportRecipe() {
       </div>
 
       <form onSubmit={handleExtract} className="bg-card p-6 md:p-8 rounded-3xl shadow-lg border border-border/50 space-y-6 relative overflow-hidden">
-        {/* Decorative background element */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
         
         <div className="space-y-3">
@@ -100,6 +145,8 @@ export default function ImportRecipe() {
             className="h-14 text-lg rounded-xl px-4 bg-background border-border/80 focus:ring-primary/20 shadow-inner"
           />
         </div>
+
+        <ProfileSelector selected={selectedProfileIds} onChange={setSelectedProfileIds} />
 
         <Button 
           type="submit" 

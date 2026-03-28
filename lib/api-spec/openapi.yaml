@@ -15,6 +15,8 @@ tags:
     description: Paprika integration
   - name: ai
     description: AI recipe generation
+  - name: dietary
+    description: Dietary profiles and compliance scoring
 paths:
   /healthz:
     get:
@@ -197,6 +199,156 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /dietary-profiles:
+    get:
+      operationId: listDietaryProfiles
+      tags: [dietary]
+      summary: List all dietary profiles
+      responses:
+        "200":
+          description: List of dietary profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietaryProfile"
+    post:
+      operationId: createDietaryProfile
+      tags: [dietary]
+      summary: Create a dietary profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DietaryProfileInput"
+      responses:
+        "201":
+          description: Created profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DietaryProfile"
+
+  /dietary-profiles/{id}:
+    patch:
+      operationId: updateDietaryProfile
+      tags: [dietary]
+      summary: Update a dietary profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DietaryProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DietaryProfile"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteDietaryProfile
+      tags: [dietary]
+      summary: Delete a dietary profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /recipes/compliance-score:
+    post:
+      operationId: computeComplianceScore
+      tags: [dietary]
+      summary: Compute compliance score for a recipe against a profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceScoreRequest"
+      responses:
+        "200":
+          description: Compliance score result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceScoreResult"
+
+  /recipes/{id}/compliance-scores:
+    get:
+      operationId: getRecipeComplianceScores
+      tags: [dietary]
+      summary: Get stored compliance scores for a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Compliance scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoredComplianceScore"
+
+  /recipes/compliance-scores/bulk:
+    get:
+      operationId: getBulkComplianceScores
+      tags: [dietary]
+      summary: Get compliance scores for all recipes (for recipe cards)
+      responses:
+        "200":
+          description: Map of recipeId to array of compliance scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoredComplianceScore"
+
+  /recipes/dietary-suggestions:
+    post:
+      operationId: getDietarySuggestions
+      tags: [dietary]
+      summary: Get dietary suggestions for a recipe against selected profiles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DietarySuggestionsRequest"
+      responses:
+        "200":
+          description: List of dietary suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DietarySuggestionsResponse"
 
   /paprika/credentials:
     get:
@@ -601,3 +753,137 @@ components:
         - imported
         - skipped
         - errors
+
+    DietaryProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+        - updatedAt
+
+    DietaryProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+        - description
+
+    ComplianceScoreRequest:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+        profileId:
+          type: integer
+        ingredients:
+          type: string
+        directions:
+          type: string
+        profileDescription:
+          type: string
+      required:
+        - recipeId
+        - profileId
+        - ingredients
+        - directions
+        - profileDescription
+
+    ComplianceScoreResult:
+      type: object
+      properties:
+        score:
+          type: integer
+        reason:
+          type: string
+      required:
+        - score
+        - reason
+
+    StoredComplianceScore:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        profileId:
+          type: integer
+        profileName:
+          type: string
+        score:
+          type: integer
+        reason:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - recipeId
+        - profileId
+        - profileName
+        - score
+        - reason
+        - updatedAt
+
+    DietarySuggestion:
+      type: object
+      properties:
+        field:
+          type: string
+        original:
+          type: string
+        suggested:
+          type: string
+        reason:
+          type: string
+        profileName:
+          type: string
+      required:
+        - field
+        - original
+        - suggested
+        - reason
+        - profileName
+
+    DietarySuggestionsRequest:
+      type: object
+      properties:
+        recipe:
+          $ref: "#/components/schemas/RecipeInput"
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietaryProfileInput"
+      required:
+        - recipe
+        - profiles
+
+    DietarySuggestionsResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DietarySuggestion"
+      required:
+        - suggestions

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, recipesTable, paprikaCredentialsTable } from "@workspace/db";
+import { scoreRecipeForAllProfiles } from "../dietary";
 import {
   ListRecipesResponse,
   GetRecipeResponse,
@@ -157,6 +158,14 @@ router.post("/recipes", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(GetRecipeResponse.parse(recipe));
+
+  setImmediate(async () => {
+    try {
+      await scoreRecipeForAllProfiles(recipe.id, recipe.ingredients, recipe.directions);
+    } catch (err) {
+      req.log.warn({ err }, `Failed to score new recipe ${recipe.id} against dietary profiles`);
+    }
+  });
 });
 
 /**

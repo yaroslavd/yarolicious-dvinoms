@@ -3,17 +3,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { usePaprikaCredentials, useSetPaprikaCredentials } from "@/hooks/use-paprika";
+import {
+  useDietaryProfiles,
+  useCreateDietaryProfile,
+  useUpdateDietaryProfile,
+  useDeleteDietaryProfile,
+} from "@/hooks/use-dietary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi, Tags, RefreshCw, Check, Download,
+  Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi, Tags, RefreshCw,
+  Check, Download, Plus, Trash2, Edit3, X, User, Salad,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { PaprikaCredentialsInput, CategorizationSuggestion, PaprikaImportResult } from "@workspace/api-client-react";
+import type { PaprikaCredentialsInput, CategorizationSuggestion, PaprikaImportResult, DietaryProfile } from "@workspace/api-client-react";
 import {
   useCategorizationPreview,
   useCategorizationApply,
@@ -30,17 +38,180 @@ type CredsFormData = z.infer<typeof credsSchema>;
 
 type CategorizeState = "idle" | "loading" | "preview" | "applying" | "done";
 
+interface ProfileCardProps {
+  profile: DietaryProfile;
+  onDelete: (id: number) => void;
+}
+
+function ProfileCard({ profile, onDelete }: ProfileCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(profile.name);
+  const [description, setDescription] = useState(profile.description);
+  const updateMutation = useUpdateDietaryProfile();
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    if (!name.trim() || !description.trim()) return;
+    try {
+      await updateMutation.mutateAsync({ id: profile.id, data: { name: name.trim(), description: description.trim() } });
+      setIsEditing(false);
+      toast({ title: "Profile updated", description: `"${name}" has been updated. Scores will be recomputed.` });
+    } catch (err: any) {
+      toast({ title: "Failed to update", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleCancel = () => {
+    setName(profile.name);
+    setDescription(profile.description);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="border border-primary/30 rounded-xl p-4 bg-primary/5 space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Profile Name</Label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Sarah"
+            className="h-9 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Dietary Needs</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g. pre-diabetic, avoid refined grains, low sodium"
+            className="text-sm h-20 resize-none"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={updateMutation.isPending || !name.trim() || !description.trim()}
+            className="h-8 text-xs"
+          >
+            {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
+            Save
+          </Button>
+          <Button size="sm" variant="ghost" onClick={handleCancel} className="h-8 text-xs">
+            <X className="w-3 h-3 mr-1" /> Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-border/60 rounded-xl p-4 bg-background flex items-start justify-between gap-3 group">
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+          <User className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm text-foreground">{profile.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{profile.description}</p>
+        </div>
+      </div>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={() => setIsEditing(true)}
+          title="Edit profile"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          onClick={() => onDelete(profile.id)}
+          title="Delete profile"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AddProfileForm({ onCancel }: { onCancel: () => void }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const createMutation = useCreateDietaryProfile();
+  const { toast } = useToast();
+
+  const handleCreate = async () => {
+    if (!name.trim() || !description.trim()) return;
+    try {
+      await createMutation.mutateAsync({ data: { name: name.trim(), description: description.trim() } });
+      onCancel();
+      toast({
+        title: `Profile "${name}" created`,
+        description: "Compliance scores will be computed for existing recipes.",
+      });
+    } catch (err: any) {
+      toast({ title: "Failed to create profile", description: err.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="border border-primary/30 rounded-xl p-4 bg-primary/5 space-y-3">
+      <div className="space-y-1.5">
+        <Label className="text-xs">Profile Name</Label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Me, Sarah, Kids"
+          className="h-9 text-sm"
+          autoFocus
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Dietary Needs</Label>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe dietary restrictions, preferences, or health goals — e.g. 'pre-diabetic, avoid refined grains and added sugar'"
+          className="text-sm h-24 resize-none"
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={handleCreate}
+          disabled={createMutation.isPending || !name.trim() || !description.trim()}
+          className="h-8 text-xs bg-primary hover:bg-primary/90"
+        >
+          {createMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+          Add Profile
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel} className="h-8 text-xs">
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { data: creds, isLoading } = usePaprikaCredentials();
+  const { data: profiles, isLoading: profilesLoading } = useDietaryProfiles();
+  const deleteMutation = useDeleteDietaryProfile();
   const setMutation = useSetPaprikaCredentials();
   const { toast } = useToast();
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "fail">("idle");
   const [testMessage, setTestMessage] = useState("");
+  const [showAddProfile, setShowAddProfile] = useState(false);
 
-  // Categorization state
   const [categorizeState, setCategorizeState] = useState<CategorizeState>("idle");
   const [suggestions, setSuggestions] = useState<CategorizationSuggestion[]>([]);
-  // Map of recipeId -> Set of toggled-off category UIDs (pre-selected = on by default)
   const [deselected, setDeselected] = useState<Map<number, Set<string>>>(new Map());
   const [applyResult, setApplyResult] = useState<{ applied: number; errors: string[] } | null>(null);
 
@@ -166,7 +337,6 @@ export default function Settings() {
     return !(deselected.get(recipeId)?.has(uid) ?? false);
   };
 
-  // Count recipes that have at least one selected addition
   const applicableCount = suggestions.filter((s) =>
     s.toAdd.some((cat) => isCategorySelected(s.recipeId, cat.uid))
   ).length;
@@ -205,6 +375,16 @@ export default function Settings() {
     }
   };
 
+  const handleDeleteProfile = async (id: number) => {
+    const profile = profiles?.find((p: DietaryProfile) => p.id === id);
+    try {
+      await deleteMutation.mutateAsync({ id });
+      toast({ title: `Profile "${profile?.name}" deleted` });
+    } catch (err: any) {
+      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -220,6 +400,68 @@ export default function Settings() {
         <h1 className="text-3xl font-serif font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground mt-2">Manage your app integrations and preferences.</p>
       </div>
+
+      {/* Dietary Profiles Card */}
+      <Card className="border-border/60 shadow-lg">
+        <CardHeader className="bg-accent/10 border-b border-border/50 pb-6 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 flex items-center justify-center rounded-xl">
+              <Salad className="w-6 h-6" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-serif">Dietary Profiles</CardTitle>
+              <CardDescription className="mt-1">
+                Add profiles for each person. Recipes will be scored for how well they fit each profile.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-6 space-y-4">
+          {profilesLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading profiles…
+            </div>
+          ) : (
+            <>
+              {profiles && profiles.length > 0 ? (
+                <div className="space-y-2">
+                  {profiles.map((profile: DietaryProfile) => (
+                    <ProfileCard key={profile.id} profile={profile} onDelete={handleDeleteProfile} />
+                  ))}
+                </div>
+              ) : (
+                !showAddProfile && (
+                  <p className="text-sm text-muted-foreground py-2">
+                    No profiles yet. Add a profile for each person eating from your cookbook.
+                  </p>
+                )
+              )}
+
+              {showAddProfile ? (
+                <AddProfileForm onCancel={() => setShowAddProfile(false)} />
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-sm border-dashed"
+                  onClick={() => setShowAddProfile(true)}
+                >
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Add Profile
+                </Button>
+              )}
+
+              {profiles && profiles.length > 0 && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  Compliance scores are computed automatically when you save a recipe or update a profile.
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/60 shadow-lg">
         <CardHeader className="bg-accent/10 border-b border-border/50 pb-6 rounded-t-xl">
@@ -428,7 +670,6 @@ export default function Settings() {
           </CardHeader>
 
           <CardContent className="pt-6 space-y-5">
-            {/* Action row */}
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleGeneratePreview}
@@ -459,7 +700,6 @@ export default function Settings() {
               Categories are only added, never removed. Your Paprika category list is always fetched fresh before applying.
             </p>
 
-            {/* Preview widget */}
             {(categorizeState === "preview" || categorizeState === "applying" || categorizeState === "done") && suggestions.length > 0 && (
               <div className="space-y-3">
                 <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
@@ -467,7 +707,6 @@ export default function Settings() {
                     <div key={s.recipeId} className="border border-border/50 rounded-xl p-4 bg-background/60">
                       <p className="font-medium text-sm mb-2 truncate">{s.recipeName}</p>
 
-                      {/* Current categories */}
                       {s.currentCategories.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
                           {s.currentCategories.map((cat) => (
@@ -478,7 +717,6 @@ export default function Settings() {
                         </div>
                       )}
 
-                      {/* Suggested additions */}
                       {s.toAdd.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {s.toAdd.map((cat) => {

@@ -20,6 +20,12 @@ import type {
   CategorizationApplyBody,
   CategorizationApplyResult,
   CategorizationPreview,
+  ComplianceScoreRequest,
+  ComplianceScoreResult,
+  DietaryProfile,
+  DietaryProfileInput,
+  DietarySuggestionsRequest,
+  DietarySuggestionsResponse,
   ErrorResponse,
   GenerateRecipeBody,
   HealthStatus,
@@ -31,6 +37,7 @@ import type {
   PaprikaImportResult,
   Recipe,
   RecipeInput,
+  StoredComplianceScore,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -787,6 +794,683 @@ export const useExportRecipeToPaprika = <
   TContext
 > => {
   return useMutation(getExportRecipeToPaprikaMutationOptions(options));
+};
+
+/**
+ * @summary List all dietary profiles
+ */
+export const getListDietaryProfilesUrl = () => {
+  return `/api/dietary-profiles`;
+};
+
+export const listDietaryProfiles = async (
+  options?: RequestInit,
+): Promise<DietaryProfile[]> => {
+  return customFetch<DietaryProfile[]>(getListDietaryProfilesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDietaryProfilesQueryKey = () => {
+  return [`/api/dietary-profiles`] as const;
+};
+
+export const getListDietaryProfilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDietaryProfiles>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listDietaryProfiles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListDietaryProfilesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDietaryProfiles>>
+  > = ({ signal }) => listDietaryProfiles({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDietaryProfiles>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDietaryProfilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDietaryProfiles>>
+>;
+export type ListDietaryProfilesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all dietary profiles
+ */
+
+export function useListDietaryProfiles<
+  TData = Awaited<ReturnType<typeof listDietaryProfiles>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listDietaryProfiles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDietaryProfilesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a dietary profile
+ */
+export const getCreateDietaryProfileUrl = () => {
+  return `/api/dietary-profiles`;
+};
+
+export const createDietaryProfile = async (
+  dietaryProfileInput: DietaryProfileInput,
+  options?: RequestInit,
+): Promise<DietaryProfile> => {
+  return customFetch<DietaryProfile>(getCreateDietaryProfileUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(dietaryProfileInput),
+  });
+};
+
+export const getCreateDietaryProfileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDietaryProfile>>,
+    TError,
+    { data: BodyType<DietaryProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDietaryProfile>>,
+  TError,
+  { data: BodyType<DietaryProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["createDietaryProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDietaryProfile>>,
+    { data: BodyType<DietaryProfileInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDietaryProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDietaryProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDietaryProfile>>
+>;
+export type CreateDietaryProfileMutationBody = BodyType<DietaryProfileInput>;
+export type CreateDietaryProfileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a dietary profile
+ */
+export const useCreateDietaryProfile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDietaryProfile>>,
+    TError,
+    { data: BodyType<DietaryProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDietaryProfile>>,
+  TError,
+  { data: BodyType<DietaryProfileInput> },
+  TContext
+> => {
+  return useMutation(getCreateDietaryProfileMutationOptions(options));
+};
+
+/**
+ * @summary Update a dietary profile
+ */
+export const getUpdateDietaryProfileUrl = (id: number) => {
+  return `/api/dietary-profiles/${id}`;
+};
+
+export const updateDietaryProfile = async (
+  id: number,
+  dietaryProfileInput: DietaryProfileInput,
+  options?: RequestInit,
+): Promise<DietaryProfile> => {
+  return customFetch<DietaryProfile>(getUpdateDietaryProfileUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(dietaryProfileInput),
+  });
+};
+
+export const getUpdateDietaryProfileMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDietaryProfile>>,
+    TError,
+    { id: number; data: BodyType<DietaryProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDietaryProfile>>,
+  TError,
+  { id: number; data: BodyType<DietaryProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["updateDietaryProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDietaryProfile>>,
+    { id: number; data: BodyType<DietaryProfileInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDietaryProfile(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDietaryProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDietaryProfile>>
+>;
+export type UpdateDietaryProfileMutationBody = BodyType<DietaryProfileInput>;
+export type UpdateDietaryProfileMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a dietary profile
+ */
+export const useUpdateDietaryProfile = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDietaryProfile>>,
+    TError,
+    { id: number; data: BodyType<DietaryProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDietaryProfile>>,
+  TError,
+  { id: number; data: BodyType<DietaryProfileInput> },
+  TContext
+> => {
+  return useMutation(getUpdateDietaryProfileMutationOptions(options));
+};
+
+/**
+ * @summary Delete a dietary profile
+ */
+export const getDeleteDietaryProfileUrl = (id: number) => {
+  return `/api/dietary-profiles/${id}`;
+};
+
+export const deleteDietaryProfile = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteDietaryProfileUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteDietaryProfileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDietaryProfile>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteDietaryProfile>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteDietaryProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDietaryProfile>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteDietaryProfile(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteDietaryProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDietaryProfile>>
+>;
+
+export type DeleteDietaryProfileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a dietary profile
+ */
+export const useDeleteDietaryProfile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDietaryProfile>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteDietaryProfile>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteDietaryProfileMutationOptions(options));
+};
+
+/**
+ * @summary Compute compliance score for a recipe against a profile
+ */
+export const getComputeComplianceScoreUrl = () => {
+  return `/api/recipes/compliance-score`;
+};
+
+export const computeComplianceScore = async (
+  complianceScoreRequest: ComplianceScoreRequest,
+  options?: RequestInit,
+): Promise<ComplianceScoreResult> => {
+  return customFetch<ComplianceScoreResult>(getComputeComplianceScoreUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(complianceScoreRequest),
+  });
+};
+
+export const getComputeComplianceScoreMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof computeComplianceScore>>,
+    TError,
+    { data: BodyType<ComplianceScoreRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof computeComplianceScore>>,
+  TError,
+  { data: BodyType<ComplianceScoreRequest> },
+  TContext
+> => {
+  const mutationKey = ["computeComplianceScore"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof computeComplianceScore>>,
+    { data: BodyType<ComplianceScoreRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return computeComplianceScore(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ComputeComplianceScoreMutationResult = NonNullable<
+  Awaited<ReturnType<typeof computeComplianceScore>>
+>;
+export type ComputeComplianceScoreMutationBody =
+  BodyType<ComplianceScoreRequest>;
+export type ComputeComplianceScoreMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Compute compliance score for a recipe against a profile
+ */
+export const useComputeComplianceScore = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof computeComplianceScore>>,
+    TError,
+    { data: BodyType<ComplianceScoreRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof computeComplianceScore>>,
+  TError,
+  { data: BodyType<ComplianceScoreRequest> },
+  TContext
+> => {
+  return useMutation(getComputeComplianceScoreMutationOptions(options));
+};
+
+/**
+ * @summary Get stored compliance scores for a recipe
+ */
+export const getGetRecipeComplianceScoresUrl = (id: number) => {
+  return `/api/recipes/${id}/compliance-scores`;
+};
+
+export const getRecipeComplianceScores = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StoredComplianceScore[]> => {
+  return customFetch<StoredComplianceScore[]>(
+    getGetRecipeComplianceScoresUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetRecipeComplianceScoresQueryKey = (id: number) => {
+  return [`/api/recipes/${id}/compliance-scores`] as const;
+};
+
+export const getGetRecipeComplianceScoresQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecipeComplianceScores>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRecipeComplianceScores>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetRecipeComplianceScoresQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRecipeComplianceScores>>
+  > = ({ signal }) =>
+    getRecipeComplianceScores(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRecipeComplianceScores>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRecipeComplianceScoresQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecipeComplianceScores>>
+>;
+export type GetRecipeComplianceScoresQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get stored compliance scores for a recipe
+ */
+
+export function useGetRecipeComplianceScores<
+  TData = Awaited<ReturnType<typeof getRecipeComplianceScores>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getRecipeComplianceScores>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRecipeComplianceScoresQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get compliance scores for all recipes (for recipe cards)
+ */
+export const getGetBulkComplianceScoresUrl = () => {
+  return `/api/recipes/compliance-scores/bulk`;
+};
+
+export const getBulkComplianceScores = async (
+  options?: RequestInit,
+): Promise<StoredComplianceScore[]> => {
+  return customFetch<StoredComplianceScore[]>(getGetBulkComplianceScoresUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBulkComplianceScoresQueryKey = () => {
+  return [`/api/recipes/compliance-scores/bulk`] as const;
+};
+
+export const getGetBulkComplianceScoresQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBulkComplianceScores>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkComplianceScores>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetBulkComplianceScoresQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getBulkComplianceScores>>
+  > = ({ signal }) => getBulkComplianceScores({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkComplianceScores>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBulkComplianceScoresQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBulkComplianceScores>>
+>;
+export type GetBulkComplianceScoresQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get compliance scores for all recipes (for recipe cards)
+ */
+
+export function useGetBulkComplianceScores<
+  TData = Awaited<ReturnType<typeof getBulkComplianceScores>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBulkComplianceScores>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBulkComplianceScoresQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get dietary suggestions for a recipe against selected profiles
+ */
+export const getGetDietarySuggestionsUrl = () => {
+  return `/api/recipes/dietary-suggestions`;
+};
+
+export const getDietarySuggestions = async (
+  dietarySuggestionsRequest: DietarySuggestionsRequest,
+  options?: RequestInit,
+): Promise<DietarySuggestionsResponse> => {
+  return customFetch<DietarySuggestionsResponse>(
+    getGetDietarySuggestionsUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(dietarySuggestionsRequest),
+    },
+  );
+};
+
+export const getGetDietarySuggestionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getDietarySuggestions>>,
+    TError,
+    { data: BodyType<DietarySuggestionsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getDietarySuggestions>>,
+  TError,
+  { data: BodyType<DietarySuggestionsRequest> },
+  TContext
+> => {
+  const mutationKey = ["getDietarySuggestions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getDietarySuggestions>>,
+    { data: BodyType<DietarySuggestionsRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getDietarySuggestions(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetDietarySuggestionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getDietarySuggestions>>
+>;
+export type GetDietarySuggestionsMutationBody =
+  BodyType<DietarySuggestionsRequest>;
+export type GetDietarySuggestionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Get dietary suggestions for a recipe against selected profiles
+ */
+export const useGetDietarySuggestions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getDietarySuggestions>>,
+    TError,
+    { data: BodyType<DietarySuggestionsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getDietarySuggestions>>,
+  TError,
+  { data: BodyType<DietarySuggestionsRequest> },
+  TContext
+> => {
+  return useMutation(getGetDietarySuggestionsMutationOptions(options));
 };
 
 /**

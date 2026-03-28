@@ -154,3 +154,56 @@ export interface PaprikaImportResult {
   /** Per-recipe error messages for any failures during import */
   errors: string[];
 }
+
+export interface DietaryProfile {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DietaryProfileInput {
+  name: string;
+  description: string;
+}
+
+export interface ComplianceScoreRequest {
+  recipeId: number;
+  profileId: number;
+  ingredients: string;
+  directions: string;
+  profileDescription: string;
+}
+
+export interface ComplianceScoreResult {
+  score: number;
+  reason: string;
+}
+
+export interface StoredComplianceScore {
+  id: number;
+  recipeId: number;
+  profileId: number;
+  profileName: string;
+  score: number;
+  reason: string;
+  updatedAt: string;
+}
+
+export interface DietarySuggestion {
+  field: string;
+  original: string;
+  suggested: string;
+  reason: string;
+  profileName: string;
+}
+
+export interface DietarySuggestionsRequest {
+  recipe: RecipeInput;
+  profiles: DietaryProfileInput[];
+}
+
+export interface DietarySuggestionsResponse {
+  suggestions: DietarySuggestion[];
+}

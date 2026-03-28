@@ -1,4 +1,5 @@
 import { useRecipes } from "@/hooks/use-recipes";
+import { useBulkComplianceScores } from "@/hooks/use-dietary";
 import { RecipeCard } from "@/components/recipe-card";
 import { Loader2, ChefHat, Plus } from "lucide-react";
 import { Link } from "wouter";
@@ -7,6 +8,7 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const { data: recipes, isLoading, isError } = useRecipes();
+  const { data: complianceScores, isLoading: complianceLoading } = useBulkComplianceScores();
 
   if (isLoading) {
     return (
@@ -93,7 +95,13 @@ export default function Home() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {recipes.map((recipe, i) => (
-            <RecipeCard key={recipe.id} recipe={recipe} index={i} />
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              index={i}
+              complianceScores={complianceScores}
+              complianceLoading={complianceLoading}
+            />
           ))}
         </div>
       )}
