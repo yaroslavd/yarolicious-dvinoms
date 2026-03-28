@@ -35,6 +35,8 @@ export interface Recipe {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
+  /** Star rating from Paprika (0-5) */
+  rating: number;
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;

@@ -291,6 +291,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /paprika/import:
+    post:
+      operationId: importFromPaprika
+      tags: [paprika]
+      summary: Import all recipes from the user's Paprika account into the local database
+      description: >
+        Fetches all recipes from the user's Paprika account, resolves categories,
+        stores embedded photos as data URIs, and inserts recipes not already present
+        (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
+      responses:
+        "200":
+          description: Import summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaprikaImportResult"
+        "400":
+          description: No credentials configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to fetch from Paprika
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -382,6 +411,9 @@ components:
           type: ["string", "null"]
         difficulty:
           type: ["string", "null"]
+        rating:
+          type: integer
+          description: Star rating from Paprika (0-5)
         exportedToPaprika:
           type: boolean
         paprikaUid:
@@ -397,6 +429,7 @@ components:
         - name
         - ingredients
         - directions
+        - rating
         - exportedToPaprika
         - createdAt
         - updatedAt
@@ -544,4 +577,27 @@ components:
             type: string
       required:
         - applied
+        - errors
+
+    PaprikaImportResult:
+      type: object
+      properties:
+        found:
+          type: integer
+          description: Total number of recipes found in Paprika
+        imported:
+          type: integer
+          description: Number of recipes newly imported into the local database
+        skipped:
+          type: integer
+          description: Number of recipes already present locally or deleted in Paprika
+        errors:
+          type: array
+          items:
+            type: string
+          description: Per-recipe error messages for any failures during import
+      required:
+        - found
+        - imported
+        - skipped
         - errors

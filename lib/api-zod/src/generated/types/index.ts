@@ -20,5 +20,6 @@ export * from "./paprikaCategory";
 export * from "./paprikaCredentials";
 export * from "./paprikaCredentialsInput";
 export * from "./paprikaExportResult";
+export * from "./paprikaImportResult";
 export * from "./recipe";
 export * from "./recipeInput";

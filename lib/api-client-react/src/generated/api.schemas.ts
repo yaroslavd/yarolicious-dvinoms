@@ -72,6 +72,8 @@ export interface Recipe {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
+  /** Star rating from Paprika (0-5) */
+  rating: number;
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;
@@ -139,5 +141,16 @@ export interface CategorizationApplyBody {
 
 export interface CategorizationApplyResult {
   applied: number;
+  errors: string[];
+}
+
+export interface PaprikaImportResult {
+  /** Total number of recipes found in Paprika */
+  found: number;
+  /** Number of recipes newly imported into the local database */
+  imported: number;
+  /** Number of recipes already present locally or deleted in Paprika */
+  skipped: number;
+  /** Per-recipe error messages for any failures during import */
   errors: string[];
 }

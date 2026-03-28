@@ -9,10 +9,14 @@ import {
   CategorizationPreviewResponse,
   CategorizationApplyBody,
   CategorizationApplyResponse,
+  ImportFromPaprikaResponse,
 } from "@workspace/api-zod";
 import {
   validatePaprikaCredentials,
   fetchPaprikaCategories,
+  fetchPaprikaRecipeList,
+  fetchPaprikaRecipeDetail,
+  mapPaprikaRecipeToLocal,
   syncRecipeToPaprika,
   type PaprikaCategoryRaw,
 } from "../lib/paprika";
@@ -348,6 +352,97 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
   }
 
   res.json(CategorizationApplyResponse.parse({ applied, errors }));
+});
+
+router.post("/paprika/import", async (_req, res): Promise<void> => {
+  const [creds] = await db.select().from(paprikaCredentialsTable).limit(1);
+
+  if (!creds) {
+    res.status(400).json({ error: "No Paprika credentials configured. Add them in Settings first." });
+    return;
+  }
+
+  const password = Buffer.from(creds.encryptedPassword, "base64").toString("utf-8");
+
+  // Fetch categories and recipe list in parallel
+  let rawCategories: PaprikaCategoryRaw[] = [];
+  let recipeList: { uid: string; hash: string }[] = [];
+  try {
+    [rawCategories, recipeList] = await Promise.all([
+      fetchPaprikaCategories(creds.email, password),
+      fetchPaprikaRecipeList(creds.email, password),
+    ]);
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to fetch from Paprika: ${err.message}` });
+    return;
+  }
+
+  const found = recipeList.length;
+
+  // Load existing paprika UIDs from the local database to detect duplicates
+  const existingRecipes = await db
+    .select({ paprikaUid: recipesTable.paprikaUid })
+    .from(recipesTable);
+  const existingUids = new Set(
+    existingRecipes
+      .map((r) => r.paprikaUid)
+      .filter((uid): uid is string => uid !== null && uid !== undefined)
+  );
+
+  let imported = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const item of recipeList) {
+    // Skip recipes already in the local database (matched by Paprika UID)
+    if (existingUids.has(item.uid)) {
+      skipped++;
+      continue;
+    }
+
+    try {
+      const raw = await fetchPaprikaRecipeDetail(creds.email, password, item.uid);
+      if (!raw) {
+        skipped++;
+        continue;
+      }
+
+      // Skip deleted recipes
+      if (raw.deleted) {
+        skipped++;
+        continue;
+      }
+
+      const mapped = mapPaprikaRecipeToLocal(raw, rawCategories);
+
+      await db.insert(recipesTable).values({
+        name: mapped.name,
+        description: mapped.description,
+        ingredients: mapped.ingredients,
+        directions: mapped.directions,
+        servings: mapped.servings,
+        totalTime: mapped.totalTime,
+        prepTime: mapped.prepTime,
+        cookTime: mapped.cookTime,
+        notes: mapped.notes,
+        nutritionalInfo: mapped.nutritionalInfo,
+        source: mapped.source,
+        sourceUrl: mapped.sourceUrl,
+        imageUrl: mapped.imageUrl,
+        categories: mapped.categories,
+        difficulty: mapped.difficulty,
+        rating: mapped.rating,
+        exportedToPaprika: true,
+        paprikaUid: mapped.paprikaUid,
+      });
+
+      imported++;
+    } catch (err: any) {
+      errors.push(`Recipe ${item.uid}: ${err.message}`);
+    }
+  }
+
+  res.json(ImportFromPaprikaResponse.parse({ found, imported, skipped, errors }));
 });
 
 export default router;

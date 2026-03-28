@@ -10,14 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi, Tags, RefreshCw, Check,
+  Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi, Tags, RefreshCw, Check, Download,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { PaprikaCredentialsInput, CategorizationSuggestion } from "@workspace/api-client-react";
+import type { PaprikaCredentialsInput, CategorizationSuggestion, PaprikaImportResult } from "@workspace/api-client-react";
 import {
   useCategorizationPreview,
   useCategorizationApply,
+  useImportFromPaprika,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const credsSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -44,6 +46,12 @@ export default function Settings() {
 
   const previewMutation = useCategorizationPreview();
   const applyMutation = useCategorizationApply();
+  const importMutation = useImportFromPaprika();
+  const queryClient = useQueryClient();
+
+  const [importState, setImportState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [importResult, setImportResult] = useState<PaprikaImportResult | null>(null);
+  const [importError, setImportError] = useState<string>("");
 
   const form = useForm<CredsFormData>({
     resolver: zodResolver(credsSchema),
@@ -90,6 +98,31 @@ export default function Settings() {
       toast({
         title: "Failed to save",
         description: err.message || "Please check your credentials.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    setImportState("loading");
+    setImportResult(null);
+    setImportError("");
+    try {
+      const result = await importMutation.mutateAsync();
+      setImportResult(result);
+      setImportState("done");
+      // Invalidate the recipes query so the home page refreshes
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      toast({
+        title: `Import complete`,
+        description: `${result.imported} recipe${result.imported !== 1 ? "s" : ""} imported from Paprika.`,
+      });
+    } catch (err: any) {
+      setImportError(err.message ?? "Import failed");
+      setImportState("error");
+      toast({
+        title: "Import failed",
+        description: err.message ?? "Could not import from Paprika.",
         variant: "destructive",
       });
     }
@@ -301,6 +334,81 @@ export default function Settings() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Import from Paprika Card */}
+      {creds?.configured && (
+        <Card className="border-border/60 shadow-lg">
+          <CardHeader className="bg-accent/10 border-b border-border/50 pb-6 rounded-t-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#EA5B4E]/10 text-[#EA5B4E] flex items-center justify-center rounded-xl">
+                <Download className="w-6 h-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-serif">Import from Paprika</CardTitle>
+                <CardDescription className="mt-1">
+                  Pull all your existing Paprika recipes into this app. Recipes already here are skipped.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              All recipes from your Paprika account will be fetched, including their categories and photos.
+              Recipes already imported (matched by Paprika ID) are never duplicated.
+            </p>
+
+            <Button
+              onClick={handleImport}
+              disabled={importState === "loading"}
+              className="h-11 bg-[#EA5B4E] hover:bg-[#D44E42] text-white shadow-sm"
+              data-testid="import-from-paprika-btn"
+            >
+              {importState === "loading" ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Importing…
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  {importState === "done" ? "Import Again" : "Import from Paprika"}
+                </>
+              )}
+            </Button>
+
+            {importState === "done" && importResult && (
+              <div
+                className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 dark:bg-green-950/20 dark:border-green-800/40 dark:text-green-300 flex items-start gap-3"
+                data-testid="import-result"
+              >
+                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm">Import complete</p>
+                  <p className="text-sm">
+                    Found <strong>{importResult.found}</strong> recipe{importResult.found !== 1 ? "s" : ""} in Paprika &mdash;{" "}
+                    <strong>{importResult.imported}</strong> imported, <strong>{importResult.skipped}</strong> skipped.
+                  </p>
+                  {importResult.errors.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {importResult.errors.map((e, i) => (
+                        <li key={i} className="text-xs text-red-700 dark:text-red-400">{e}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {importState === "error" && importError && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 dark:bg-red-950/20 dark:border-red-800/40 dark:text-red-300 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-sm">{importError}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Categorize Recipes Card */}
       {creds?.configured && (

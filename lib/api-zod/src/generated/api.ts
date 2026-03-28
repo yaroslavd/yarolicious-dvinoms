@@ -35,6 +35,7 @@ export const ListRecipesResponseItem = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
   createdAt: zod.date(),
@@ -87,6 +88,7 @@ export const GetRecipeResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
   createdAt: zod.date(),
@@ -135,6 +137,7 @@ export const UpdateRecipeResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
   createdAt: zod.date(),
@@ -280,4 +283,24 @@ export const CategorizationApplyBody = zod.object({
 export const CategorizationApplyResponse = zod.object({
   applied: zod.number(),
   errors: zod.array(zod.string()),
+});
+
+/**
+ * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
+
+ * @summary Import all recipes from the user's Paprika account into the local database
+ */
+export const ImportFromPaprikaResponse = zod.object({
+  found: zod.number().describe("Total number of recipes found in Paprika"),
+  imported: zod
+    .number()
+    .describe("Number of recipes newly imported into the local database"),
+  skipped: zod
+    .number()
+    .describe(
+      "Number of recipes already present locally or deleted in Paprika",
+    ),
+  errors: zod
+    .array(zod.string())
+    .describe("Per-recipe error messages for any failures during import"),
 });

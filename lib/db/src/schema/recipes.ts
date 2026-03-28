@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -19,6 +19,7 @@ export const recipesTable = pgTable("recipes", {
   imageUrl: text("image_url"),
   categories: text("categories"),
   difficulty: text("difficulty"),
+  rating: integer("rating").notNull().default(0),
   exportedToPaprika: boolean("exported_to_paprika").notNull().default(false),
   paprikaUid: text("paprika_uid"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

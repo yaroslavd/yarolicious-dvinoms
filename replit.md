@@ -91,6 +91,14 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### Testing
+
+The `api-server` package uses **Vitest** for automated testing:
+- Unit tests: `src/lib/paprika.test.ts` — tests `mapPaprikaRecipeToLocal`, `fetchPaprikaRecipeList`, `fetchPaprikaRecipeDetail`
+- Integration tests: `src/routes/paprika-import.test.ts` — tests `POST /api/paprika/import` with mocked DB and Paprika API
+- Run tests: `pnpm --filter @workspace/api-server run test`
+- Config: `artifacts/api-server/vitest.config.ts`
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.

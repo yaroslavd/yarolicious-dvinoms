@@ -28,6 +28,7 @@ import type {
   PaprikaCredentials,
   PaprikaCredentialsInput,
   PaprikaExportResult,
+  PaprikaImportResult,
   Recipe,
   RecipeInput,
 } from "./api.schemas";
@@ -1190,4 +1191,87 @@ export const useCategorizationApply = <
   TContext
 > => {
   return useMutation(getCategorizationApplyMutationOptions(options));
+};
+
+/**
+ * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
+
+ * @summary Import all recipes from the user's Paprika account into the local database
+ */
+export const getImportFromPaprikaUrl = () => {
+  return `/api/paprika/import`;
+};
+
+export const importFromPaprika = async (
+  options?: RequestInit,
+): Promise<PaprikaImportResult> => {
+  return customFetch<PaprikaImportResult>(getImportFromPaprikaUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getImportFromPaprikaMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importFromPaprika>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importFromPaprika>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["importFromPaprika"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importFromPaprika>>,
+    void
+  > = () => {
+    return importFromPaprika(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportFromPaprikaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importFromPaprika>>
+>;
+
+export type ImportFromPaprikaMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Import all recipes from the user's Paprika account into the local database
+ */
+export const useImportFromPaprika = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importFromPaprika>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importFromPaprika>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getImportFromPaprikaMutationOptions(options));
 };

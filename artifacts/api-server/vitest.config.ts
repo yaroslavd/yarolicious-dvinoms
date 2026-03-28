@@ -6,5 +6,10 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts"],
     testTimeout: 10000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text"],
+      include: ["src/lib/paprika.ts", "src/routes/paprika.ts"],
+    },
   },
 });

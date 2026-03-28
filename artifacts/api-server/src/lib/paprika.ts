@@ -267,6 +267,184 @@ export async function syncRecipeToPaprika(
   };
 }
 
+export interface PaprikaRecipeListItem {
+  uid: string;
+  hash: string;
+}
+
+export interface PaprikaRecipeRaw {
+  uid: string;
+  name: string;
+  description?: string;
+  ingredients: string;
+  directions: string;
+  servings?: string;
+  total_time?: string;
+  prep_time?: string;
+  cook_time?: string;
+  notes?: string;
+  nutritional_info?: string;
+  source?: string;
+  source_url?: string;
+  image_url?: string;
+  categories?: string[];
+  difficulty?: string;
+  rating?: number;
+  photo?: string | null;
+  photo_filename?: string | null;
+  deleted?: boolean;
+}
+
+export interface MappedRecipe {
+  paprikaUid: string;
+  name: string;
+  description: string | null;
+  ingredients: string;
+  directions: string;
+  servings: string | null;
+  totalTime: string | null;
+  prepTime: string | null;
+  cookTime: string | null;
+  notes: string | null;
+  nutritionalInfo: string | null;
+  source: string | null;
+  sourceUrl: string | null;
+  imageUrl: string | null;
+  categories: string | null;
+  difficulty: string | null;
+  rating: number;
+}
+
+/**
+ * Fetches the list of all recipe UIDs from the user's Paprika account.
+ */
+export async function fetchPaprikaRecipeList(
+  email: string,
+  password: string
+): Promise<PaprikaRecipeListItem[]> {
+  const authHeader = makeAuthHeader(email, password);
+  const res = await fetch(`${PAPRIKA_BASE_V1}/sync/recipes/`, {
+    headers: {
+      Authorization: authHeader,
+      "User-Agent": "Paprika/3.0",
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch Paprika recipe list: ${res.status} ${text}`);
+  }
+  const json = await res.json() as { result: PaprikaRecipeListItem[] };
+  return json.result ?? [];
+}
+
+function gunzipAsync(data: Buffer): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    zlib.gunzip(data, (err, result) => {
+      if (err) reject(err);
+      else resolve(result);
+    });
+  });
+}
+
+/**
+ * Fetches the full detail of a single Paprika recipe by UID.
+ * The Paprika API may return a plain JSON body or a gzip-compressed JSON body
+ * (indicated by Content-Encoding: gzip or Content-Type: application/octet-stream).
+ * This function handles both transparently.
+ */
+export async function fetchPaprikaRecipeDetail(
+  email: string,
+  password: string,
+  uid: string
+): Promise<PaprikaRecipeRaw | null> {
+  const authHeader = makeAuthHeader(email, password);
+  const res = await fetch(`${PAPRIKA_BASE_V1}/sync/recipe/${uid}/`, {
+    headers: {
+      Authorization: authHeader,
+      "User-Agent": "Paprika/3.0",
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const text = await res.text();
+    throw new Error(`Failed to fetch Paprika recipe ${uid}: ${res.status} ${text}`);
+  }
+
+  const contentEncoding = res.headers.get("Content-Encoding") ?? "";
+  const contentType = res.headers.get("Content-Type") ?? "";
+  const isGzipped =
+    contentEncoding.includes("gzip") ||
+    contentType.includes("octet-stream");
+
+  let json: { result: PaprikaRecipeRaw };
+  if (isGzipped) {
+    const buf = Buffer.from(await res.arrayBuffer());
+    const decompressed = await gunzipAsync(buf);
+    json = JSON.parse(decompressed.toString("utf-8")) as { result: PaprikaRecipeRaw };
+  } else {
+    json = await res.json() as { result: PaprikaRecipeRaw };
+  }
+
+  return json.result ?? null;
+}
+
+/**
+ * Maps a raw Paprika recipe object to the local recipe schema.
+ * Resolves category UIDs to category name strings using the provided category list.
+ * If the recipe has a photo (base64-encoded), it is stored as a data URL in imageUrl.
+ */
+export function mapPaprikaRecipeToLocal(
+  raw: PaprikaRecipeRaw,
+  categories: PaprikaCategoryRaw[]
+): MappedRecipe {
+  const categoryMap = new Map(categories.map((c) => [c.uid, c.name]));
+
+  // Resolve category UIDs to names
+  let categoryNames: string | null = null;
+  if (Array.isArray(raw.categories) && raw.categories.length > 0) {
+    const names = raw.categories
+      .map((uid) => categoryMap.get(uid) ?? uid)
+      .filter(Boolean);
+    categoryNames = names.length > 0 ? names.join(", ") : null;
+  }
+
+  // Handle image: prefer embedded base64 photo, then fall back to image_url
+  let imageUrl: string | null = null;
+  if (raw.photo && raw.photo.length > 0) {
+    // Detect mime type from filename or default to jpeg
+    const filename = raw.photo_filename ?? "";
+    let mimeType = "image/jpeg";
+    if (filename.endsWith(".png")) mimeType = "image/png";
+    else if (filename.endsWith(".gif")) mimeType = "image/gif";
+    else if (filename.endsWith(".webp")) mimeType = "image/webp";
+    imageUrl = `data:${mimeType};base64,${raw.photo}`;
+  } else if (raw.image_url && raw.image_url.trim().length > 0) {
+    imageUrl = raw.image_url.trim();
+  }
+
+  return {
+    paprikaUid: raw.uid,
+    name: raw.name ?? "",
+    description: raw.description?.trim() || null,
+    ingredients: raw.ingredients ?? "",
+    directions: raw.directions ?? "",
+    servings: raw.servings?.trim() || null,
+    totalTime: raw.total_time?.trim() || null,
+    prepTime: raw.prep_time?.trim() || null,
+    cookTime: raw.cook_time?.trim() || null,
+    notes: raw.notes?.trim() || null,
+    nutritionalInfo: raw.nutritional_info?.trim() || null,
+    source: raw.source?.trim() || null,
+    sourceUrl: raw.source_url?.trim() || null,
+    imageUrl,
+    categories: categoryNames,
+    difficulty: raw.difficulty?.trim() || null,
+    rating: raw.rating ?? 0,
+  };
+}
+
 /**
  * Marks a recipe as deleted in Paprika by posting a minimal gzipped payload
  * with deleted: true. Used to clean up stale/duplicate entries.
