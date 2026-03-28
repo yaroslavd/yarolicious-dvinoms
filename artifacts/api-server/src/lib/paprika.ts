@@ -1,12 +1,8 @@
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import zlib from "zlib";
 
-const PAPRIKA_BASE = "https://www.paprikaapp.com/api/v2";
-
-const PAPRIKA_HEADERS = {
-  "User-Agent": "Paprika/3.0 iOS/18.0",
-  Accept: "application/json",
-};
+const PAPRIKA_BASE_V1 = "https://www.paprikaapp.com/api/v1";
+const PAPRIKA_BASE_V2 = "https://www.paprikaapp.com/api/v2";
 
 function makeAuthHeader(email: string, password: string): string {
   return "Basic " + Buffer.from(`${email}:${password}`).toString("base64");
@@ -21,20 +17,43 @@ function gzipAsync(data: Buffer): Promise<Buffer> {
   });
 }
 
+function nowTimestamp(): string {
+  return new Date().toISOString().replace("T", " ").slice(0, 19);
+}
+
+function makeMultipartBody(
+  gzipped: Buffer,
+  boundary: string
+): Buffer {
+  return Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="data"; filename="recipe.gz"\r\nContent-Type: application/octet-stream\r\n\r\n`
+    ),
+    gzipped,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+}
+
 export async function validatePaprikaCredentials(
   email: string,
   password: string
 ): Promise<{ valid: boolean; error?: string }> {
   try {
-    const response = await fetch(`${PAPRIKA_BASE}/sync/status/`, {
-      headers: {
-        ...PAPRIKA_HEADERS,
-        Authorization: makeAuthHeader(email, password),
-      },
+    const authHeader = makeAuthHeader(email, password);
+    // v2 status is a lightweight check
+    const r2 = await fetch(`${PAPRIKA_BASE_V2}/sync/status/`, {
+      headers: { Authorization: authHeader, "User-Agent": "Paprika/3.0", Accept: "application/json" },
     });
-    if (response.ok) return { valid: true };
-    const text = await response.text();
-    return { valid: false, error: `${response.status}: ${text}` };
+    if (r2.ok) return { valid: true };
+
+    // Fall back to v1 recipes list
+    const r1 = await fetch(`${PAPRIKA_BASE_V1}/sync/recipes/`, {
+      headers: { Authorization: authHeader, "User-Agent": "Paprika/3.0", Accept: "application/json" },
+    });
+    if (r1.ok) return { valid: true };
+
+    const text = await r2.text();
+    return { valid: false, error: `${r2.status}: ${text}` };
   } catch (err: any) {
     return { valid: false, error: err.message };
   }
@@ -62,13 +81,13 @@ export async function syncRecipeToPaprika(
   }
 ): Promise<{ success: boolean; uid: string; message: string }> {
   const uid = randomUUID();
+  const created = nowTimestamp();
 
   const paprikaRecipe = {
     uid,
     name: recipe.name,
-    description: recipe.description ?? "",
-    ingredients: recipe.ingredients,
     directions: recipe.directions,
+    ingredients: recipe.ingredients,
     servings: recipe.servings ?? "",
     total_time: recipe.totalTime ?? "",
     prep_time: recipe.prepTime ?? "",
@@ -77,38 +96,50 @@ export async function syncRecipeToPaprika(
     nutritional_info: recipe.nutritionalInfo ?? "",
     source: recipe.source ?? "",
     source_url: recipe.sourceUrl ?? "",
-    image_url: recipe.imageUrl ?? "",
-    categories: recipe.categories ? recipe.categories.split(",").map((c) => c.trim()) : [],
+    image_url: recipe.imageUrl ?? null,
+    categories: [] as string[], // category UIDs — we don't have them, so leave empty
     difficulty: recipe.difficulty ?? "",
     rating: 0,
-    on_favorites: false,
-    in_trash: false,
-    hash: uid,
-    photo: "",
-    photo_hash: null as string | null,
-    photo_large: null as string | null,
-    scale: null as string | null,
+    on_favorites: 0,   // must be integer per Paprika v1 API
+    photo: null,
+    photo_hash: null,
+    photo_large: null,
+    scale: null,
+    deleted: false,
+    created,
+    hash: "",          // filled in below
   };
+
+  // Hash = SHA-256 of the uid (consistent with reverse-engineered format)
+  paprikaRecipe.hash = createHash("sha256").update(uid).digest("hex");
 
   const jsonBuf = Buffer.from(JSON.stringify(paprikaRecipe), "utf-8");
   const gzipped = await gzipAsync(jsonBuf);
-  const base64Data = gzipped.toString("base64");
 
-  const body = new URLSearchParams({ recipe64: base64Data }).toString();
+  const authHeader = makeAuthHeader(email, password);
+  const boundary = "----FormBoundary" + Date.now();
+  const body = makeMultipartBody(gzipped, boundary);
 
-  const response = await fetch(`${PAPRIKA_BASE}/sync/recipe/${uid}/`, {
+  const response = await fetch(`${PAPRIKA_BASE_V1}/sync/recipe/${uid}/`, {
     method: "POST",
     headers: {
-      ...PAPRIKA_HEADERS,
-      Authorization: makeAuthHeader(email, password),
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Content-Length": String(Buffer.byteLength(body, "utf-8")),
+      Authorization: authHeader,
+      "User-Agent": "Paprika/3.0",
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+      "Content-Length": String(body.length),
     },
     body,
   });
 
   if (!response.ok) {
     const text = await response.text();
+    if (response.status === 401) {
+      return {
+        success: false,
+        uid: "",
+        message: "Authentication failed — please re-enter your Paprika credentials in Settings.",
+      };
+    }
     return {
       success: false,
       uid: "",

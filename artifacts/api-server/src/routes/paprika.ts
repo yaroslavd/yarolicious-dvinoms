@@ -6,6 +6,7 @@ import {
   SetPaprikaCredentialsBody,
   SetPaprikaCredentialsResponse,
 } from "@workspace/api-zod";
+import { validatePaprikaCredentials } from "../lib/paprika";
 
 const router: IRouter = Router();
 
@@ -46,6 +47,24 @@ router.post("/paprika/credentials", async (req, res): Promise<void> => {
   }
 
   res.json(SetPaprikaCredentialsResponse.parse({ configured: true, email }));
+});
+
+router.post("/paprika/test", async (_req, res): Promise<void> => {
+  const [creds] = await db.select().from(paprikaCredentialsTable).limit(1);
+
+  if (!creds) {
+    res.status(400).json({ success: false, message: "No credentials configured. Add them in Settings first." });
+    return;
+  }
+
+  const password = Buffer.from(creds.encryptedPassword, "base64").toString("utf-8");
+  const result = await validatePaprikaCredentials(creds.email, password);
+
+  if (result.valid) {
+    res.json({ success: true, message: `Connected successfully as ${creds.email}` });
+  } else {
+    res.status(401).json({ success: false, message: `Connection failed: ${result.error ?? "Invalid credentials"}` });
+  }
 });
 
 export default router;

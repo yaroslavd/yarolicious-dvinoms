@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi } from "lucide-react";
 import { motion } from "framer-motion";
 import type { PaprikaCredentialsInput } from "@workspace/api-client-react";
 
@@ -23,6 +23,8 @@ export default function Settings() {
   const { data: creds, isLoading } = usePaprikaCredentials();
   const setMutation = useSetPaprikaCredentials();
   const { toast } = useToast();
+  const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "fail">("idle");
+  const [testMessage, setTestMessage] = useState("");
 
   const form = useForm<CredsFormData>({
     resolver: zodResolver(credsSchema),
@@ -38,6 +40,25 @@ export default function Settings() {
       form.setValue("email", creds.email);
     }
   }, [creds?.email]);
+
+  const handleTest = async () => {
+    setTestStatus("loading");
+    setTestMessage("");
+    try {
+      const res = await fetch("/api/paprika/test", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        setTestStatus("ok");
+        setTestMessage(json.message);
+      } else {
+        setTestStatus("fail");
+        setTestMessage(json.message);
+      }
+    } catch (err: any) {
+      setTestStatus("fail");
+      setTestMessage(err.message ?? "Network error");
+    }
+  };
 
   const onSubmit = async (data: CredsFormData) => {
     try {
@@ -135,18 +156,54 @@ export default function Settings() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-md mt-4 shadow-md bg-[#EA5B4E] hover:bg-[#D44E42] text-white"
-              disabled={setMutation.isPending}
-            >
-              {setMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
+            <div className="flex gap-2 mt-4">
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 text-md shadow-md bg-[#EA5B4E] hover:bg-[#D44E42] text-white"
+                disabled={setMutation.isPending}
+              >
+                {setMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {creds?.configured ? "Update" : "Connect"}
+              </Button>
+
+              {creds?.configured && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 px-4"
+                  onClick={handleTest}
+                  disabled={testStatus === "loading"}
+                  title="Test stored credentials"
+                >
+                  {testStatus === "loading" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wifi className="w-4 h-4" />
+                  )}
+                </Button>
               )}
-              {creds?.configured ? "Update Connection" : "Connect Account"}
-            </Button>
+            </div>
+
+            {testStatus !== "idle" && (
+              <div className={`mt-3 p-3 rounded-lg text-sm flex items-start gap-2 ${
+                testStatus === "ok"
+                  ? "bg-green-50 border border-green-200 text-green-800 dark:bg-green-950/20 dark:border-green-800/40 dark:text-green-300"
+                  : testStatus === "fail"
+                  ? "bg-red-50 border border-red-200 text-red-800 dark:bg-red-950/20 dark:border-red-800/40 dark:text-red-300"
+                  : ""
+              }`}>
+                {testStatus === "ok" ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                )}
+                <span>{testMessage}</span>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
