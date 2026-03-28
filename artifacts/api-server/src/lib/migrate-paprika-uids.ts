@@ -9,14 +9,15 @@ import { logger } from "./logger";
  * during testing, so they cannot be recovered from the DB alone. They must be
  * cleaned up explicitly. The list is safe to re-run: Paprika returns 200/404
  * for already-deleted entries (deleteFromPaprika treats 404 as success).
+ *
+ * These are the four UIDs that accumulated for recipe 1 before the deterministic
+ * UID fix was applied. They all correspond to "One-Pot Orzo and Meatballs".
  */
 const KNOWN_STALE_PAPRIKA_UIDS: string[] = [
   "63986a0b-0850-4289-bbea-a789daec947d",
   "7e21765d-da4a-4c89-ae6d-d77c5f5a87d3",
   "97af98a2-4602-491f-9765-c659d1c170ea",
   "c90e9074-e3b3-49d9-ac32-bff728412d02",
-  "0756d58e-85e1-415d-9ad3-292413bea9c5", // was temporarily the DB value before migration
-  "0a6c01e9-2860-4795-9722-be7b560ebd8b", // 6th duplicate discovered during cleanup
 ];
 
 /**
