@@ -232,6 +232,8 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
     return;
   }
 
+  // Build both lookup directions: UID → category (primary, rename-safe) and name → category (fallback)
+  const categoryByUid = new Map(liveCategories.map((c) => [c.uid.toLowerCase(), c]));
   const categoryByName = new Map(liveCategories.map((c) => [c.name.toLowerCase(), c]));
 
   const applications = parsed.data.applications;
@@ -239,7 +241,7 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
   const errors: string[] = [];
 
   for (const app of applications) {
-    if (app.categoryNames.length === 0) continue;
+    if (app.categoryUids.length === 0) continue;
 
     try {
       // Load recipe from DB
@@ -254,19 +256,38 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
         continue;
       }
 
-      // Merge category names (no duplicates, case-insensitive)
+      // Existing category names in DB
       const existingNames = recipe.categories
         ? recipe.categories.split(",").map((s) => s.trim()).filter(Boolean)
         : [];
       const existingLower = new Set(existingNames.map((n) => n.toLowerCase()));
 
-      const newNames = app.categoryNames.filter((n) => !existingLower.has(n.toLowerCase()));
+      // Resolve additions: use submitted UIDs as source of truth (rename-safe).
+      // Look up current live name by UID; fall back to submitted name if UID no longer exists.
+      const additions: { uid: string; name: string }[] = [];
+      for (let i = 0; i < app.categoryUids.length; i++) {
+        const uid = app.categoryUids[i];
+        const submittedName = app.categoryNames[i] ?? "";
+        const live = categoryByUid.get(uid.toLowerCase());
+        const resolved = live ?? categoryByName.get(submittedName.toLowerCase());
+        if (!resolved) continue; // category was deleted from Paprika — skip
+        if (!existingLower.has(resolved.name.toLowerCase())) {
+          additions.push(resolved);
+        }
+      }
+
+      const newNames = additions.map((a) => a.name);
       const mergedNames = [...existingNames, ...newNames];
 
-      // Map all category names to current UIDs from live Paprika API
-      const mergedUids = mergedNames
-        .map((name) => categoryByName.get(name.toLowerCase())?.uid)
-        .filter((uid): uid is string => !!uid);
+      // Build full UID set for Paprika sync:
+      // - UIDs for newly added categories (resolved above)
+      // - UIDs for existing DB category names that still resolve to a live Paprika category
+      const syncUidSet = new Set<string>(additions.map((a) => a.uid));
+      for (const name of existingNames) {
+        const live = categoryByName.get(name.toLowerCase());
+        if (live) syncUidSet.add(live.uid);
+      }
+      const mergedUids = Array.from(syncUidSet);
 
       // Update DB
       await db
