@@ -84,22 +84,23 @@ export default function RecipeDetail() {
       return;
     }
     
+    const isResync = recipe.exportedToPaprika;
     try {
       const res = await exportMutation.mutateAsync({ id });
       if (res.success) {
         toast({ 
-          title: "Exported to Paprika!", 
+          title: isResync ? "Re-synced to Paprika!" : "Exported to Paprika!",
           description: res.message 
         });
       } else {
         toast({ 
-          title: "Export failed", 
+          title: "Sync failed", 
           description: res.message, 
           variant: "destructive" 
         });
       }
     } catch (err: any) {
-      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
     }
   };
 
@@ -212,11 +213,13 @@ export default function RecipeDetail() {
               </div>
               <Button 
                 onClick={handleExport} 
-                disabled={exportMutation.isPending || recipe.exportedToPaprika}
+                disabled={exportMutation.isPending}
                 className="w-full bg-[#EA5B4E] hover:bg-[#D44E42] text-white shadow-md shadow-[#EA5B4E]/20"
               >
-                {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}
-                {recipe.exportedToPaprika ? "Synced" : "Sync via API"}
+                {exportMutation.isPending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <ArrowUpRight className="w-4 h-4 mr-2" />}
+                {recipe.exportedToPaprika ? "Re-sync to Paprika" : "Sync to Paprika"}
               </Button>
               <a
                 href={`${import.meta.env.BASE_URL}api/recipes/${id}/paprika-file`}

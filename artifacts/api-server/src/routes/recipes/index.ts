@@ -274,6 +274,7 @@ router.post("/recipes/:id/export-to-paprika", async (req, res): Promise<void> =>
       imageUrl: recipe.imageUrl,
       categories: recipe.categories,
       difficulty: recipe.difficulty,
+      existingUid: recipe.paprikaUid,  // reuse same UID to update instead of duplicate
     });
 
     if (result.success) {

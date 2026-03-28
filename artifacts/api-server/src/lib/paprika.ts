@@ -96,9 +96,10 @@ export async function syncRecipeToPaprika(
     imageUrl?: string | null;
     categories?: string | null;
     difficulty?: string | null;
+    existingUid?: string | null;
   }
 ): Promise<{ success: boolean; uid: string; message: string }> {
-  const uid = randomUUID();
+  const uid = recipe.existingUid ?? randomUUID();
   const created = nowTimestamp();
 
   // Download and embed image if available
