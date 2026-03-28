@@ -429,7 +429,6 @@ export const CategorizationApplyResponse = zod.object({
 
 /**
  * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
-
  * @summary Import all recipes from the user's Paprika account into the local database
  */
 export const ImportFromPaprikaResponse = zod.object({
@@ -445,4 +444,67 @@ export const ImportFromPaprikaResponse = zod.object({
   errors: zod
     .array(zod.string())
     .describe("Per-recipe error messages for any failures during import"),
+});
+
+/**
+ * @summary Import a recipe from ChatGPT (Bearer token auth)
+ */
+export const ChatgptImportBody = zod.object({
+  name: zod.string(),
+  description: zod.string().nullish(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  servings: zod.string().nullish(),
+  totalTime: zod.string().nullish(),
+  prepTime: zod.string().nullish(),
+  cookTime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  nutritionalInfo: zod.string().nullish(),
+  source: zod.string().nullish(),
+  sourceUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  categories: zod.string().nullish(),
+  difficulty: zod.string().nullish(),
+});
+
+export const ChatgptImportResponse = zod.object({
+  message: zod.string(),
+  id: zod.number(),
+});
+
+export const ChatgptPendingRecipe = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  servings: zod.string().nullish(),
+  totalTime: zod.string().nullish(),
+  prepTime: zod.string().nullish(),
+  cookTime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  nutritionalInfo: zod.string().nullish(),
+  source: zod.string().nullish(),
+  sourceUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  categories: zod.string().nullish(),
+  difficulty: zod.string().nullish(),
+  status: zod.string(),
+  createdAt: zod.date(),
+});
+
+export const ListPendingRecipesResponse = zod.array(ChatgptPendingRecipe);
+
+export const ChatgptPendingRecipeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetApiKeyResponse = zod.object({
+  configured: zod.boolean(),
+  maskedKey: zod.string().nullish(),
+});
+
+export const RegenerateApiKeyResponse = zod.object({
+  apiKey: zod.string(),
+  maskedKey: zod.string(),
 });

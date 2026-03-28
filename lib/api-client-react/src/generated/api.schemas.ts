@@ -207,3 +207,82 @@ export interface DietarySuggestionsRequest {
 export interface DietarySuggestionsResponse {
   suggestions: DietarySuggestion[];
 }
+
+export interface ChatgptImportBody {
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  ingredients: string;
+  directions: string;
+  /** @nullable */
+  servings?: string | null;
+  /** @nullable */
+  totalTime?: string | null;
+  /** @nullable */
+  prepTime?: string | null;
+  /** @nullable */
+  cookTime?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  nutritionalInfo?: string | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  categories?: string | null;
+  /** @nullable */
+  difficulty?: string | null;
+}
+
+export interface ChatgptImportResponse {
+  message: string;
+  id: number;
+}
+
+export interface ChatgptPendingRecipe {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  ingredients: string;
+  directions: string;
+  /** @nullable */
+  servings?: string | null;
+  /** @nullable */
+  totalTime?: string | null;
+  /** @nullable */
+  prepTime?: string | null;
+  /** @nullable */
+  cookTime?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  nutritionalInfo?: string | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  categories?: string | null;
+  /** @nullable */
+  difficulty?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface GetApiKeyResponse {
+  configured: boolean;
+  /** @nullable */
+  maskedKey?: string | null;
+}
+
+export interface RegenerateApiKeyResponse {
+  apiKey: string;
+  maskedKey: string;
+}

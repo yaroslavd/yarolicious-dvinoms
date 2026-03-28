@@ -26,8 +26,12 @@ import type {
   DietaryProfileInput,
   DietarySuggestionsRequest,
   DietarySuggestionsResponse,
+  ChatgptImportBody,
+  ChatgptImportResponse,
+  ChatgptPendingRecipe,
   ErrorResponse,
   GenerateRecipeBody,
+  GetApiKeyResponse,
   HealthStatus,
   ImportUrlBody,
   PaprikaCategoriesResponse,
@@ -38,6 +42,7 @@ import type {
   Recipe,
   RecipeInput,
   StoredComplianceScore,
+  RegenerateApiKeyResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1879,7 +1884,7 @@ export const useCategorizationApply = <
 
 /**
  * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
-
+ *
  * @summary Import all recipes from the user's Paprika account into the local database
  */
 export const getImportFromPaprikaUrl = () => {
@@ -1958,4 +1963,371 @@ export const useImportFromPaprika = <
   TContext
 > => {
   return useMutation(getImportFromPaprikaMutationOptions(options));
+};
+
+/**
+ * @summary Get the current ChatGPT import API key status
+ */
+export const getChatgptApiKeyUrl = () => {
+  return `/api/chatgpt/api-key`;
+};
+
+export const getChatgptApiKey = async (
+  options?: RequestInit,
+): Promise<GetApiKeyResponse> => {
+  return customFetch<GetApiKeyResponse>(getChatgptApiKeyUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getChatgptApiKeyQueryKey = () => {
+  return [`/api/chatgpt/api-key`] as const;
+};
+
+export const getChatgptApiKeyQueryOptions = <
+  TData = Awaited<ReturnType<typeof getChatgptApiKey>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getChatgptApiKey>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getChatgptApiKeyQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getChatgptApiKey>>> = ({
+    signal,
+  }) => getChatgptApiKey({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getChatgptApiKey>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetChatgptApiKeyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getChatgptApiKey>>
+>;
+export type GetChatgptApiKeyQueryError = ErrorType<unknown>;
+
+export function useGetChatgptApiKey<
+  TData = Awaited<ReturnType<typeof getChatgptApiKey>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getChatgptApiKey>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getChatgptApiKeyQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Regenerate the ChatGPT import API key
+ */
+export const regenerateChatgptApiKeyUrl = () => {
+  return `/api/chatgpt/api-key/regenerate`;
+};
+
+export const regenerateChatgptApiKey = async (
+  options?: RequestInit,
+): Promise<RegenerateApiKeyResponse> => {
+  return customFetch<RegenerateApiKeyResponse>(regenerateChatgptApiKeyUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRegenerateChatgptApiKeyMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof regenerateChatgptApiKey>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof regenerateChatgptApiKey>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["regenerateChatgptApiKey"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof regenerateChatgptApiKey>>,
+    void
+  > = () => {
+    return regenerateChatgptApiKey(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegenerateChatgptApiKeyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof regenerateChatgptApiKey>>
+>;
+export type RegenerateChatgptApiKeyMutationError = ErrorType<unknown>;
+
+export const useRegenerateChatgptApiKey = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof regenerateChatgptApiKey>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof regenerateChatgptApiKey>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getRegenerateChatgptApiKeyMutationOptions(options));
+};
+
+/**
+ * @summary List all pending ChatGPT recipe imports
+ */
+export const getListPendingRecipesUrl = () => {
+  return `/api/chatgpt/pending`;
+};
+
+export const listPendingRecipes = async (
+  options?: RequestInit,
+): Promise<ChatgptPendingRecipe[]> => {
+  return customFetch<ChatgptPendingRecipe[]>(getListPendingRecipesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPendingRecipesQueryKey = () => {
+  return [`/api/chatgpt/pending`] as const;
+};
+
+export const getListPendingRecipesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingRecipes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingRecipes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListPendingRecipesQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingRecipes>>> = ({
+    signal,
+  }) => listPendingRecipes({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingRecipes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPendingRecipesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingRecipes>>
+>;
+export type ListPendingRecipesQueryError = ErrorType<unknown>;
+
+export function useListPendingRecipes<
+  TData = Awaited<ReturnType<typeof listPendingRecipes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingRecipes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPendingRecipesQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Confirm a pending ChatGPT recipe (move to main collection)
+ */
+export const confirmPendingRecipeUrl = (id: number) => {
+  return `/api/chatgpt/pending/${id}/confirm`;
+};
+
+export const confirmPendingRecipe = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(confirmPendingRecipeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getConfirmPendingRecipeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmPendingRecipe>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmPendingRecipe>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["confirmPendingRecipe"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmPendingRecipe>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+    return confirmPendingRecipe(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmPendingRecipeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmPendingRecipe>>
+>;
+export type ConfirmPendingRecipeMutationError = ErrorType<unknown>;
+
+export const useConfirmPendingRecipe = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmPendingRecipe>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmPendingRecipe>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getConfirmPendingRecipeMutationOptions(options));
+};
+
+/**
+ * @summary Dismiss a pending ChatGPT recipe
+ */
+export const dismissPendingRecipeUrl = (id: number) => {
+  return `/api/chatgpt/pending/${id}`;
+};
+
+export const dismissPendingRecipe = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(dismissPendingRecipeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDismissPendingRecipeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissPendingRecipe>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissPendingRecipe>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["dismissPendingRecipe"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissPendingRecipe>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+    return dismissPendingRecipe(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissPendingRecipeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissPendingRecipe>>
+>;
+export type DismissPendingRecipeMutationError = ErrorType<unknown>;
+
+export const useDismissPendingRecipe = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissPendingRecipe>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissPendingRecipe>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDismissPendingRecipeMutationOptions(options));
 };

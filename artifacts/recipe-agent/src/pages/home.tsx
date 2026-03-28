@@ -1,10 +1,208 @@
+import { useState } from "react";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useBulkComplianceScores } from "@/hooks/use-dietary";
 import { RecipeCard } from "@/components/recipe-card";
-import { Loader2, ChefHat, Plus } from "lucide-react";
+import { Loader2, ChefHat, Plus, Bot, ChevronDown, ChevronUp, Clock, Users, Check, X, ImageIcon } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  useListPendingRecipes,
+  useConfirmPendingRecipe,
+  useDismissPendingRecipe,
+  getListPendingRecipesQueryKey,
+  getListRecipesQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import type { ChatgptPendingRecipe } from "@workspace/api-client-react";
+
+function PendingRecipeCard({ recipe, onConfirm, onDismiss, isLoading }: {
+  recipe: ChatgptPendingRecipe;
+  onConfirm: () => void;
+  onDismiss: () => void;
+  isLoading: boolean;
+}) {
+  const hasImage = !!recipe.imageUrl && recipe.imageUrl.length > 5;
+
+  return (
+    <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
+      {hasImage && (
+        <div className="aspect-[3/1] overflow-hidden bg-muted">
+          <img
+            src={recipe.imageUrl!}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      <div className="p-5 space-y-3">
+        <div>
+          <h3 className="font-serif font-bold text-lg text-foreground leading-tight">{recipe.name}</h3>
+          {recipe.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recipe.description}</p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+          {recipe.totalTime && (
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />{recipe.totalTime}
+            </span>
+          )}
+          {recipe.servings && (
+            <span className="flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" />{recipe.servings}
+            </span>
+          )}
+          {recipe.difficulty && (
+            <Badge variant="secondary" className="text-xs">{recipe.difficulty}</Badge>
+          )}
+          {recipe.categories && (
+            <Badge variant="outline" className="text-xs">{recipe.categories}</Badge>
+          )}
+        </div>
+
+        {recipe.ingredients && (
+          <details className="group">
+            <summary className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors list-none flex items-center gap-1">
+              <span>View ingredients & directions</span>
+              <ChevronDown className="w-3.5 h-3.5 group-open:hidden" />
+              <ChevronUp className="w-3.5 h-3.5 hidden group-open:block" />
+            </summary>
+            <div className="mt-3 space-y-3 text-sm">
+              <div>
+                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">Ingredients</p>
+                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">{recipe.ingredients}</p>
+              </div>
+              <div>
+                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">Directions</p>
+                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">{recipe.directions}</p>
+              </div>
+            </div>
+          </details>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <Button
+            onClick={onConfirm}
+            disabled={isLoading}
+            size="sm"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-9 shadow-sm"
+          >
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1.5" />}
+            Add to Collection
+          </Button>
+          <Button
+            onClick={onDismiss}
+            disabled={isLoading}
+            size="sm"
+            variant="outline"
+            className="h-9 px-3 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatgptImportsSection() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(true);
+  const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
+
+  const { data: pending } = useListPendingRecipes({
+    query: {
+      refetchInterval: 30000,
+    },
+  });
+
+  const confirmMutation = useConfirmPendingRecipe();
+  const dismissMutation = useDismissPendingRecipe();
+
+  const count = pending?.length ?? 0;
+  if (count === 0) return null;
+
+  const handleConfirm = async (id: number, name: string) => {
+    setProcessingIds((prev) => new Set(prev).add(id));
+    try {
+      await confirmMutation.mutateAsync({ id });
+      queryClient.invalidateQueries({ queryKey: getListPendingRecipesQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() });
+      toast({ title: "Added to collection!", description: `"${name}" is now in your recipes.` });
+    } catch (err: any) {
+      toast({ title: "Failed to add recipe", description: err.message ?? "Something went wrong.", variant: "destructive" });
+    } finally {
+      setProcessingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  };
+
+  const handleDismiss = async (id: number, name: string) => {
+    setProcessingIds((prev) => new Set(prev).add(id));
+    try {
+      await dismissMutation.mutateAsync({ id });
+      queryClient.invalidateQueries({ queryKey: getListPendingRecipesQueryKey() });
+      toast({ title: "Dismissed", description: `"${name}" was removed from imports.` });
+    } catch (err: any) {
+      toast({ title: "Failed to dismiss", description: err.message ?? "Something went wrong.", variant: "destructive" });
+    } finally {
+      setProcessingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  };
+
+  return (
+    <div className="bg-emerald-50/60 border border-emerald-200/80 dark:bg-emerald-950/20 dark:border-emerald-800/40 rounded-2xl overflow-hidden shadow-sm">
+      <button
+        className="w-full flex items-center justify-between p-5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
+        onClick={() => setIsOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-emerald-600/10 text-emerald-700 flex items-center justify-center rounded-xl">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div className="text-left">
+            <div className="flex items-center gap-2">
+              <span className="font-serif font-bold text-lg text-foreground">ChatGPT Imports</span>
+              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs px-2 py-0.5">{count}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {count} recipe{count !== 1 ? "s" : ""} waiting for review
+            </p>
+          </div>
+        </div>
+        {isOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pending!.map((recipe) => (
+                <PendingRecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  isLoading={processingIds.has(recipe.id)}
+                  onConfirm={() => handleConfirm(recipe.id, recipe.name)}
+                  onDismiss={() => handleDismiss(recipe.id, recipe.name)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Home() {
   const { data: recipes, isLoading, isError } = useRecipes();
@@ -34,7 +232,7 @@ export default function Home() {
   const hasRecipes = recipes && recipes.length > 0;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="space-y-8 pb-12"
@@ -46,7 +244,7 @@ export default function Home() {
             {hasRecipes ? `You have ${recipes.length} recipe${recipes.length === 1 ? '' : 's'} saved.` : "Your cookbook is empty."}
           </p>
         </div>
-        
+
         {hasRecipes && (
           <div className="flex gap-3">
             <Link href="/import">
@@ -63,16 +261,18 @@ export default function Home() {
         )}
       </div>
 
+      <ChatgptImportsSection />
+
       {!hasRecipes ? (
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="bg-card border border-border/60 rounded-3xl p-8 md:p-16 text-center max-w-2xl mx-auto mt-12 shadow-sm"
         >
-          <img 
-            src={`${import.meta.env.BASE_URL}images/empty-plate.png`} 
-            alt="Empty plate" 
+          <img
+            src={`${import.meta.env.BASE_URL}images/empty-plate.png`}
+            alt="Empty plate"
             className="w-48 h-48 mx-auto opacity-80 mb-8 mix-blend-multiply"
           />
           <h2 className="text-2xl font-serif font-bold text-foreground mb-4">Start your collection</h2>

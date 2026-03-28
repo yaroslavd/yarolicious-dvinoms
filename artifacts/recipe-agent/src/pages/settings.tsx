@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle, Wifi, Tags, RefreshCw,
   Check, Download, Plus, Trash2, Edit3, X, User, Salad,
+  Bot, Key, Copy, Eye, EyeOff, RotateCcw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { PaprikaCredentialsInput, CategorizationSuggestion, PaprikaImportResult, DietaryProfile } from "@workspace/api-client-react";
@@ -26,8 +27,11 @@ import {
   useCategorizationPreview,
   useCategorizationApply,
   useImportFromPaprika,
+  useGetChatgptApiKey,
+  useRegenerateChatgptApiKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { getChatgptApiKeyQueryKey } from "@workspace/api-client-react";
 
 const credsSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -206,10 +210,17 @@ export default function Settings() {
   const deleteMutation = useDeleteDietaryProfile();
   const setMutation = useSetPaprikaCredentials();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "fail">("idle");
   const [testMessage, setTestMessage] = useState("");
   const [showAddProfile, setShowAddProfile] = useState(false);
 
+  const { data: apiKeyData } = useGetChatgptApiKey();
+  const regenerateMutation = useRegenerateChatgptApiKey();
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [showConfirmRegenerate, setShowConfirmRegenerate] = useState(false);
+
+  // Categorization state
   const [categorizeState, setCategorizeState] = useState<CategorizeState>("idle");
   const [suggestions, setSuggestions] = useState<CategorizationSuggestion[]>([]);
   const [deselected, setDeselected] = useState<Map<number, Set<string>>>(new Map());
@@ -218,7 +229,6 @@ export default function Settings() {
   const previewMutation = useCategorizationPreview();
   const applyMutation = useCategorizationApply();
   const importMutation = useImportFromPaprika();
-  const queryClient = useQueryClient();
 
   const [importState, setImportState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [importResult, setImportResult] = useState<PaprikaImportResult | null>(null);
@@ -384,6 +394,90 @@ export default function Settings() {
       toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
     }
   };
+
+  const handleRegenerate = async () => {
+    try {
+      const result = await regenerateMutation.mutateAsync();
+      setRevealedKey(result.apiKey);
+      setShowConfirmRegenerate(false);
+      queryClient.invalidateQueries({ queryKey: getChatgptApiKeyQueryKey() });
+      toast({
+        title: "API Key Regenerated",
+        description: "Your new key is shown below. Copy it now — it won't be shown again.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to regenerate key",
+        description: err.message ?? "Something went wrong.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    toast({ title: "Copied!", description: "API key copied to clipboard." });
+  };
+
+  const appBaseUrl = window.location.origin + import.meta.env.BASE_URL;
+  const openApiSpec = `openapi: "3.1.0"
+info:
+  title: Culinary Agent Import
+  version: "1.0.0"
+servers:
+  - url: ${appBaseUrl}api
+paths:
+  /chatgpt/import:
+    post:
+      operationId: importRecipe
+      summary: Import a recipe into Culinary Agent
+      description: Queue a recipe for review in the Culinary Agent app.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, ingredients, directions]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                ingredients:
+                  type: string
+                directions:
+                  type: string
+                servings:
+                  type: string
+                totalTime:
+                  type: string
+                prepTime:
+                  type: string
+                cookTime:
+                  type: string
+                notes:
+                  type: string
+                imageUrl:
+                  type: string
+                categories:
+                  type: string
+                difficulty:
+                  type: string
+      responses:
+        "201":
+          description: Recipe queued successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: integer
+        "401":
+          description: Unauthorized`;
 
   if (isLoading) {
     return (
@@ -651,6 +745,159 @@ export default function Settings() {
           </CardContent>
         </Card>
       )}
+
+      {/* ChatGPT Integration Card */}
+      <Card className="border-border/60 shadow-lg">
+        <CardHeader className="bg-accent/10 border-b border-border/50 pb-6 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 flex items-center justify-center rounded-xl">
+              <Bot className="w-6 h-6" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-serif">ChatGPT Integration</CardTitle>
+              <CardDescription className="mt-1">
+                Connect a Custom GPT so you can say "import this recipe" in ChatGPT and have it land here for review.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-6 space-y-6">
+          {/* API Key Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium text-sm">Import API Key</span>
+                {apiKeyData?.configured && (
+                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                )}
+              </div>
+            </div>
+
+            {revealedKey ? (
+              <div className="space-y-2">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl dark:bg-emerald-950/20 dark:border-emerald-800/40">
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium mb-1">Your new API key (copy it now — it won't be shown again):</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs font-mono break-all text-emerald-900 dark:text-emerald-100">{revealedKey}</code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 h-8 border-emerald-300 hover:bg-emerald-100"
+                      onClick={() => handleCopyKey(revealedKey)}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => setRevealedKey(null)}
+                >
+                  <EyeOff className="w-3 h-3 mr-1" /> Hide key
+                </Button>
+              </div>
+            ) : apiKeyData?.configured ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 p-2.5 bg-muted/50 border border-border rounded-lg">
+                  <code className="text-sm font-mono text-muted-foreground">••••••••••••••••{apiKeyData.maskedKey}</code>
+                </div>
+                {!showConfirmRegenerate ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowConfirmRegenerate(true)}
+                    className="shrink-0"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                    Regenerate
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRegenerate}
+                      disabled={regenerateMutation.isPending}
+                      className="shrink-0"
+                    >
+                      {regenerateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Yes, regenerate"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowConfirmRegenerate(false)}>Cancel</Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">No API key yet. Generate one to get started.</p>
+                <Button
+                  onClick={handleRegenerate}
+                  disabled={regenerateMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                >
+                  {regenerateMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Key className="w-4 h-4 mr-2" />
+                  )}
+                  Generate API Key
+                </Button>
+              </div>
+            )}
+
+            {showConfirmRegenerate && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-950/20 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 text-sm flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                <span>Regenerating will invalidate your current key. Your Custom GPT will stop working until you update it with the new key.</span>
+              </div>
+            )}
+          </div>
+
+          {/* Setup Instructions */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Bot className="w-4 h-4 text-muted-foreground" />
+              Setup Instructions
+            </h4>
+            <ol className="space-y-2 text-sm text-muted-foreground list-none">
+              {[
+                <>Go to <strong>chatgpt.com → My GPTs → Create</strong>.</>,
+                <>Give your GPT a name like <em>"Culinary Agent"</em> and configure its instructions to import recipes when asked.</>,
+                <>In the GPT editor, click <strong>Create new action</strong> and paste the OpenAPI spec below.</>,
+                <>In the action's authentication settings, choose <strong>API Key</strong> as the auth type, set it to <strong>Bearer</strong>, and paste your API key above.</>,
+                <>Click <strong>Save</strong>, then test it: tell your GPT a recipe and say <em>"Import this into my Culinary Agent"</em>.</>,
+                <>Back in this app, go to <strong>My Recipes</strong> — you'll see the recipe appear in the ChatGPT Imports section for review.</>,
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* OpenAPI Spec */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-foreground">OpenAPI Action Spec</h4>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => handleCopyKey(openApiSpec)}
+              >
+                <Copy className="w-3 h-3 mr-1.5" /> Copy
+              </Button>
+            </div>
+            <pre className="text-xs font-mono bg-muted/60 border border-border/60 rounded-xl p-4 overflow-x-auto max-h-56 overflow-y-auto text-foreground/80 whitespace-pre">
+              {openApiSpec}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Categorize Recipes Card */}
       {creds?.configured && (
