@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Loader2, Save, CheckCircle2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import type { PaprikaCredentialsInput } from "@workspace/api-client-react";
 
@@ -27,9 +28,16 @@ export default function Settings() {
     resolver: zodResolver(credsSchema),
     defaultValues: {
       email: creds?.email || "",
-      password: "", // never prefill password visually
+      password: "",
     },
   });
+
+  // Sync email from server once creds load (defaultValues only run on mount)
+  useEffect(() => {
+    if (creds?.email) {
+      form.setValue("email", creds.email);
+    }
+  }, [creds?.email]);
 
   const onSubmit = async (data: CredsFormData) => {
     try {
@@ -80,16 +88,20 @@ export default function Settings() {
         </CardHeader>
         
         <CardContent className="pt-6">
-          {creds?.configured && (
-            <div className="mb-6 p-4 bg-secondary/10 border border-secondary/30 rounded-xl flex items-start gap-3 text-secondary-foreground">
-              <CheckCircle2 className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">Account Linked</p>
-                <p className="text-sm opacity-90">Currently configured for <span className="font-mono bg-background/50 px-1 rounded">{creds.email}</span></p>
-                <p className="text-xs opacity-70 mt-2">Entering new credentials will overwrite the existing ones.</p>
-              </div>
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-900 dark:bg-amber-950/20 dark:border-amber-800/40 dark:text-amber-200">
+            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-amber-500" />
+            <div>
+              <p className="font-semibold">Password Required</p>
+              <p className="text-sm mt-1 opacity-90">
+                {creds?.email
+                  ? <>Enter your password for <span className="font-mono bg-amber-100/50 dark:bg-amber-900/30 px-1 rounded">{creds.email}</span> to link Paprika.</>
+                  : "Enter your Paprika email and password to get started."}
+              </p>
+              <p className="text-xs mt-2 opacity-70">
+                Use the password from <strong>paprikaapp.com</strong> — not an Apple or Google account password.
+              </p>
             </div>
-          )}
+          </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
