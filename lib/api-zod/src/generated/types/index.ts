@@ -6,10 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./categorizationApplication";
+export * from "./categorizationApplyBody";
+export * from "./categorizationApplyResult";
+export * from "./categorizationPreview";
+export * from "./categorizationSuggestion";
 export * from "./errorResponse";
 export * from "./generateRecipeBody";
 export * from "./healthStatus";
 export * from "./importUrlBody";
+export * from "./paprikaCategoriesResponse";
+export * from "./paprikaCategory";
 export * from "./paprikaCredentials";
 export * from "./paprikaCredentialsInput";
 export * from "./paprikaExportResult";

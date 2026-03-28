@@ -232,3 +232,52 @@ export const SetPaprikaCredentialsResponse = zod.object({
   configured: zod.boolean(),
   email: zod.string().nullish(),
 });
+
+/**
+ * @summary Fetch categories live from the user's Paprika account
+ */
+export const GetPaprikaCategoriesResponse = zod.object({
+  categories: zod.array(
+    zod.object({
+      uid: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get AI-suggested category additions for all recipes
+ */
+export const CategorizationPreviewResponse = zod.object({
+  suggestions: zod.array(
+    zod.object({
+      recipeId: zod.number(),
+      recipeName: zod.string(),
+      currentCategories: zod.array(zod.string()),
+      toAdd: zod.array(
+        zod.object({
+          uid: zod.string(),
+          name: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Apply category updates to recipes and re-sync to Paprika
+ */
+export const CategorizationApplyBody = zod.object({
+  applications: zod.array(
+    zod.object({
+      recipeId: zod.number(),
+      categoryUids: zod.array(zod.string()),
+      categoryNames: zod.array(zod.string()),
+    }),
+  ),
+});
+
+export const CategorizationApplyResponse = zod.object({
+  applied: zod.number(),
+  errors: zod.array(zod.string()),
+});

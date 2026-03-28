@@ -17,10 +17,14 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CategorizationApplyBody,
+  CategorizationApplyResult,
+  CategorizationPreview,
   ErrorResponse,
   GenerateRecipeBody,
   HealthStatus,
   ImportUrlBody,
+  PaprikaCategoriesResponse,
   PaprikaCredentials,
   PaprikaCredentialsInput,
   PaprikaExportResult,
@@ -944,4 +948,246 @@ export const useSetPaprikaCredentials = <
   TContext
 > => {
   return useMutation(getSetPaprikaCredentialsMutationOptions(options));
+};
+
+/**
+ * @summary Fetch categories live from the user's Paprika account
+ */
+export const getGetPaprikaCategoriesUrl = () => {
+  return `/api/paprika/categories`;
+};
+
+export const getPaprikaCategories = async (
+  options?: RequestInit,
+): Promise<PaprikaCategoriesResponse> => {
+  return customFetch<PaprikaCategoriesResponse>(getGetPaprikaCategoriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPaprikaCategoriesQueryKey = () => {
+  return [`/api/paprika/categories`] as const;
+};
+
+export const getGetPaprikaCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPaprikaCategories>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPaprikaCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPaprikaCategoriesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPaprikaCategories>>
+  > = ({ signal }) => getPaprikaCategories({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPaprikaCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPaprikaCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaprikaCategories>>
+>;
+export type GetPaprikaCategoriesQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Fetch categories live from the user's Paprika account
+ */
+
+export function useGetPaprikaCategories<
+  TData = Awaited<ReturnType<typeof getPaprikaCategories>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPaprikaCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPaprikaCategoriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get AI-suggested category additions for all recipes
+ */
+export const getCategorizationPreviewUrl = () => {
+  return `/api/paprika/categorize-preview`;
+};
+
+export const categorizationPreview = async (
+  options?: RequestInit,
+): Promise<CategorizationPreview> => {
+  return customFetch<CategorizationPreview>(getCategorizationPreviewUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCategorizationPreviewMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof categorizationPreview>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof categorizationPreview>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["categorizationPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof categorizationPreview>>,
+    void
+  > = () => {
+    return categorizationPreview(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CategorizationPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof categorizationPreview>>
+>;
+
+export type CategorizationPreviewMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get AI-suggested category additions for all recipes
+ */
+export const useCategorizationPreview = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof categorizationPreview>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof categorizationPreview>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCategorizationPreviewMutationOptions(options));
+};
+
+/**
+ * @summary Apply category updates to recipes and re-sync to Paprika
+ */
+export const getCategorizationApplyUrl = () => {
+  return `/api/paprika/categorize-apply`;
+};
+
+export const categorizationApply = async (
+  categorizationApplyBody: CategorizationApplyBody,
+  options?: RequestInit,
+): Promise<CategorizationApplyResult> => {
+  return customFetch<CategorizationApplyResult>(getCategorizationApplyUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(categorizationApplyBody),
+  });
+};
+
+export const getCategorizationApplyMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof categorizationApply>>,
+    TError,
+    { data: BodyType<CategorizationApplyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof categorizationApply>>,
+  TError,
+  { data: BodyType<CategorizationApplyBody> },
+  TContext
+> => {
+  const mutationKey = ["categorizationApply"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof categorizationApply>>,
+    { data: BodyType<CategorizationApplyBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return categorizationApply(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CategorizationApplyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof categorizationApply>>
+>;
+export type CategorizationApplyMutationBody = BodyType<CategorizationApplyBody>;
+export type CategorizationApplyMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Apply category updates to recipes and re-sync to Paprika
+ */
+export const useCategorizationApply = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof categorizationApply>>,
+    TError,
+    { data: BodyType<CategorizationApplyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof categorizationApply>>,
+  TError,
+  { data: BodyType<CategorizationApplyBody> },
+  TContext
+> => {
+  return useMutation(getCategorizationApplyMutationOptions(options));
 };

@@ -228,6 +228,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/PaprikaCredentials"
 
+  /paprika/categories:
+    get:
+      operationId: getPaprikaCategories
+      tags: [paprika]
+      summary: Fetch categories live from the user's Paprika account
+      responses:
+        "200":
+          description: List of Paprika categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaprikaCategoriesResponse"
+        "400":
+          description: No credentials configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /paprika/categorize-preview:
+    post:
+      operationId: categorizationPreview
+      tags: [paprika]
+      summary: Get AI-suggested category additions for all recipes
+      responses:
+        "200":
+          description: Category suggestions for each recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategorizationPreview"
+        "400":
+          description: No credentials or no recipes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /paprika/categorize-apply:
+    post:
+      operationId: categorizationApply
+      tags: [paprika]
+      summary: Apply category updates to recipes and re-sync to Paprika
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategorizationApplyBody"
+      responses:
+        "200":
+          description: Apply result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategorizationApplyResult"
+        "400":
+          description: No credentials configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -389,3 +452,96 @@ components:
       required:
         - email
         - password
+
+    PaprikaCategory:
+      type: object
+      properties:
+        uid:
+          type: string
+        name:
+          type: string
+      required:
+        - uid
+        - name
+
+    PaprikaCategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaprikaCategory"
+      required:
+        - categories
+
+    CategorizationSuggestion:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+        recipeName:
+          type: string
+        currentCategories:
+          type: array
+          items:
+            type: string
+        toAdd:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaprikaCategory"
+      required:
+        - recipeId
+        - recipeName
+        - currentCategories
+        - toAdd
+
+    CategorizationPreview:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategorizationSuggestion"
+      required:
+        - suggestions
+
+    CategorizationApplication:
+      type: object
+      properties:
+        recipeId:
+          type: integer
+        categoryUids:
+          type: array
+          items:
+            type: string
+        categoryNames:
+          type: array
+          items:
+            type: string
+      required:
+        - recipeId
+        - categoryUids
+        - categoryNames
+
+    CategorizationApplyBody:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategorizationApplication"
+      required:
+        - applications
+
+    CategorizationApplyResult:
+      type: object
+      properties:
+        applied:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - applied
+        - errors

@@ -106,3 +106,38 @@ export interface PaprikaCredentialsInput {
   email: string;
   password: string;
 }
+
+export interface PaprikaCategory {
+  uid: string;
+  name: string;
+}
+
+export interface PaprikaCategoriesResponse {
+  categories: PaprikaCategory[];
+}
+
+export interface CategorizationSuggestion {
+  recipeId: number;
+  recipeName: string;
+  currentCategories: string[];
+  toAdd: PaprikaCategory[];
+}
+
+export interface CategorizationPreview {
+  suggestions: CategorizationSuggestion[];
+}
+
+export interface CategorizationApplication {
+  recipeId: number;
+  categoryUids: string[];
+  categoryNames: string[];
+}
+
+export interface CategorizationApplyBody {
+  applications: CategorizationApplication[];
+}
+
+export interface CategorizationApplyResult {
+  applied: number;
+  errors: string[];
+}

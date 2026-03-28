@@ -77,6 +77,33 @@ export async function validatePaprikaCredentials(
   }
 }
 
+export interface PaprikaCategoryRaw {
+  uid: string;
+  name: string;
+  order_flag: number;
+  parent_uid: string | null;
+}
+
+export async function fetchPaprikaCategories(
+  email: string,
+  password: string
+): Promise<PaprikaCategoryRaw[]> {
+  const authHeader = makeAuthHeader(email, password);
+  const res = await fetch(`${PAPRIKA_BASE_V1}/sync/categories/`, {
+    headers: {
+      Authorization: authHeader,
+      "User-Agent": "Paprika/3.0",
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch Paprika categories: ${res.status} ${text}`);
+  }
+  const json = await res.json() as { result: PaprikaCategoryRaw[] };
+  return json.result ?? [];
+}
+
 export async function syncRecipeToPaprika(
   email: string,
   password: string,
@@ -97,6 +124,7 @@ export async function syncRecipeToPaprika(
     categories?: string | null;
     difficulty?: string | null;
     existingUid?: string | null;
+    categoryUids?: string[];
   }
 ): Promise<{ success: boolean; uid: string; message: string }> {
   const uid = recipe.existingUid ?? randomUUID();
@@ -127,7 +155,7 @@ export async function syncRecipeToPaprika(
     source: recipe.source ?? "",
     source_url: recipe.sourceUrl ?? "",
     image_url: recipe.imageUrl ?? null,
-    categories: [] as string[],
+    categories: recipe.categoryUids ?? [],
     difficulty: recipe.difficulty ?? "",
     rating: 0,
     on_favorites: 0,
