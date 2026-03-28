@@ -18,9 +18,41 @@ import {
   ExportRecipeToPaprikaResponse,
 } from "@workspace/api-zod";
 import zlib from "zlib";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { scrapeRecipeFromUrl, generateRecipeWithAI } from "../../lib/recipe-scraper";
 import { syncRecipeToPaprika } from "../../lib/paprika";
+
+async function fetchImageAsBase64ForFile(
+  url: string,
+  log: { warn: (msg: string) => void }
+): Promise<{ data: string; hash: string; filename: string } | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      log.warn(`[paprika-file] Image fetch failed for URL "${url}": HTTP ${res.status}`);
+      return null;
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const data = buf.toString("base64");
+    const hash = createHash("sha256").update(buf).digest("hex");
+    let filename = "photo.jpg";
+    try {
+      const ext = new URL(url).pathname.split(".").pop()?.toLowerCase();
+      if (ext && ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+        filename = `photo.${ext}`;
+      }
+    } catch {
+      // ignore
+    }
+    return { data, hash, filename };
+  } catch (err: any) {
+    log.warn(`[paprika-file] Image fetch error for URL "${url}": ${err?.message ?? err}`);
+    return null;
+  }
+}
 
 const router: IRouter = Router();
 
@@ -117,6 +149,22 @@ router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
   }
 
   const uid = randomUUID();
+
+  // Embed image if available
+  let photo = "";
+  let photoHash: string | null = null;
+  let photoFilename: string | null = null;
+  if (recipe.imageUrl) {
+    const img = await fetchImageAsBase64ForFile(recipe.imageUrl, {
+      warn: (msg) => req.log.warn(msg),
+    });
+    if (img) {
+      photo = img.data;
+      photoHash = img.hash;
+      photoFilename = img.filename;
+    }
+  }
+
   const paprikaRecipe = {
     uid,
     name: recipe.name,
@@ -138,8 +186,9 @@ router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
     on_favorites: false,
     in_trash: false,
     hash: uid,
-    photo: "",
-    photo_hash: null,
+    photo,
+    photo_hash: photoHash,
+    photo_filename: photoFilename,
     photo_large: null,
     scale: null,
   };

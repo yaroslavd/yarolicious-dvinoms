@@ -46,14 +46,31 @@ async function fetchImageAsBase64(
       headers: { "User-Agent": "Mozilla/5.0" },
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[paprika] Image fetch failed for URL "${url}": HTTP ${res.status}`);
+      return null;
+    }
     const buf = Buffer.from(await res.arrayBuffer());
     const data = buf.toString("base64");
     const hash = createHash("sha256").update(buf).digest("hex");
     return { data, hash };
-  } catch {
+  } catch (err: any) {
+    console.warn(`[paprika] Image fetch error for URL "${url}": ${err?.message ?? err}`);
     return null;
   }
+}
+
+function derivePhotoFilename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = pathname.split(".").pop()?.toLowerCase();
+    if (ext && ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+      return `photo.${ext}`;
+    }
+  } catch {
+    // ignore
+  }
+  return "photo.jpg";
 }
 
 function makeMultipartBody(
@@ -150,11 +167,15 @@ export async function syncRecipeToPaprika(
   // Download and embed image if available
   let photo: string | null = null;
   let photoHash: string | null = null;
+  let photoFilename: string | null = null;
   if (recipe.imageUrl) {
     const img = await fetchImageAsBase64(recipe.imageUrl);
     if (img) {
       photo = img.data;
       photoHash = img.hash;
+      photoFilename = derivePhotoFilename(recipe.imageUrl);
+    } else {
+      console.warn(`[paprika] Skipping image for recipe "${recipe.name}" (id=${recipe.dbId}): image could not be fetched from ${recipe.imageUrl}`);
     }
   }
 
@@ -178,6 +199,7 @@ export async function syncRecipeToPaprika(
     on_favorites: 0,
     photo,
     photo_hash: photoHash,
+    photo_filename: photoFilename,
     photo_large: null,
     scale: null,
     deleted: false,
