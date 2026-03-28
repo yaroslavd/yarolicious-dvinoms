@@ -232,6 +232,7 @@ export async function syncRecipeToPaprika(
 /**
  * Marks a recipe as deleted in Paprika by posting a minimal gzipped payload
  * with deleted: true. Used to clean up stale/duplicate entries.
+ * Throws on non-2xx responses (404 is treated as success — already deleted).
  */
 export async function deleteFromPaprika(
   email: string,
@@ -249,7 +250,7 @@ export async function deleteFromPaprika(
   const authHeader = makeAuthHeader(email, password);
   const boundary = "----FormBoundary" + Date.now();
   const body = makeMultipartBody(gzipped, boundary);
-  await fetch(`${PAPRIKA_BASE_V1}/sync/recipe/${uid}/`, {
+  const response = await fetch(`${PAPRIKA_BASE_V1}/sync/recipe/${uid}/`, {
     method: "POST",
     headers: {
       Authorization: authHeader,
@@ -259,4 +260,9 @@ export async function deleteFromPaprika(
     },
     body,
   });
+  // 404 = already deleted — treat as success (idempotent)
+  if (!response.ok && response.status !== 404) {
+    const text = await response.text();
+    throw new Error(`Paprika delete failed for uid ${uid}: HTTP ${response.status} — ${text}`);
+  }
 }
