@@ -21,6 +21,19 @@ import zlib from "zlib";
 import { randomUUID, createHash } from "crypto";
 import { scrapeRecipeFromUrl, generateRecipeWithAI } from "../../lib/recipe-scraper";
 import { syncRecipeToPaprika } from "../../lib/paprika";
+import {
+  downloadAndStoreImage,
+  getStoredImage,
+  extractStoredImageFilename,
+} from "../../lib/imageStorage";
+
+/**
+ * Returns true if the imageUrl is one of our self-hosted stored image URLs.
+ * Stored URLs look like: https://<domain>/api/recipes/image/<filename>
+ */
+function isStoredImageUrl(imageUrl: string | null | undefined): boolean {
+  return extractStoredImageFilename(imageUrl) !== null;
+}
 
 async function fetchImageAsBase64ForFile(
   url: string,
@@ -48,8 +61,9 @@ async function fetchImageAsBase64ForFile(
       // ignore
     }
     return { data, hash, filename };
-  } catch (err: any) {
-    log.warn(`[paprika-file] Image fetch error for URL "${url}": ${err?.message ?? err}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn(`[paprika-file] Image fetch error for URL "${url}": ${message}`);
     return null;
   }
 }
@@ -106,6 +120,20 @@ router.post("/recipes", async (req, res): Promise<void> => {
     return;
   }
 
+  let imageUrl: string | null = parsed.data.imageUrl ?? null;
+
+  if (imageUrl && !isStoredImageUrl(imageUrl)) {
+    req.log.info(`[image-storage] Downloading image at recipe create: ${imageUrl}`);
+    const storedUrl = await downloadAndStoreImage(imageUrl);
+    if (storedUrl) {
+      imageUrl = storedUrl;
+      req.log.info(`[image-storage] Image stored, serving from: ${storedUrl}`);
+    } else {
+      req.log.warn(`[image-storage] Could not store image — saving recipe without image`);
+      imageUrl = null;
+    }
+  }
+
   const [recipe] = await db
     .insert(recipesTable)
     .values({
@@ -121,7 +149,7 @@ router.post("/recipes", async (req, res): Promise<void> => {
       nutritionalInfo: parsed.data.nutritionalInfo ?? null,
       source: parsed.data.source ?? null,
       sourceUrl: parsed.data.sourceUrl ?? null,
-      imageUrl: parsed.data.imageUrl ?? null,
+      imageUrl,
       categories: parsed.data.categories ?? null,
       difficulty: parsed.data.difficulty ?? null,
       exportedToPaprika: false,
@@ -129,6 +157,33 @@ router.post("/recipes", async (req, res): Promise<void> => {
     .returning();
 
   res.status(201).json(GetRecipeResponse.parse(recipe));
+});
+
+/**
+ * GET /api/recipes/image/:filename
+ * Streams a stored recipe image from object storage.
+ * The imageUrl column in the DB for stored images points to this endpoint.
+ */
+router.get("/recipes/image/:filename", async (req, res): Promise<void> => {
+  const { filename } = req.params;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    res.status(400).json({ error: "Invalid image filename" });
+    return;
+  }
+
+  const image = await getStoredImage(filename);
+
+  if (!image) {
+    res.status(404).json({ error: "Image not found" });
+    return;
+  }
+
+  res.setHeader("Content-Type", image.contentType);
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  if (image.contentLength !== undefined) {
+    res.setHeader("Content-Length", String(image.contentLength));
+  }
+  image.stream.pipe(res);
 });
 
 router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
@@ -150,7 +205,6 @@ router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
 
   const uid = randomUUID();
 
-  // Embed image if available
   let photo = "";
   let photoHash: string | null = null;
   let photoFilename: string | null = null;
@@ -162,6 +216,9 @@ router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
       photo = img.data;
       photoHash = img.hash;
       photoFilename = img.filename;
+      req.log.info(`[paprika] Image embedded in .paprikarecipe file for recipe id=${recipe.id}`);
+    } else {
+      req.log.warn(`[paprika] Could not embed image for recipe id=${recipe.id} (url=${recipe.imageUrl})`);
     }
   }
 
@@ -237,10 +294,28 @@ router.patch("/recipes/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  let updateData: typeof parsed.data = parsed.data;
+
+  if (
+    parsed.data.imageUrl !== undefined &&
+    parsed.data.imageUrl !== null &&
+    !isStoredImageUrl(parsed.data.imageUrl)
+  ) {
+    req.log.info(`[image-storage] Downloading image at recipe update: ${parsed.data.imageUrl}`);
+    const storedUrl = await downloadAndStoreImage(parsed.data.imageUrl);
+    if (storedUrl) {
+      req.log.info(`[image-storage] Image stored, serving from: ${storedUrl}`);
+      updateData = { ...parsed.data, imageUrl: storedUrl };
+    } else {
+      req.log.warn(`[image-storage] Could not store updated image — setting imageUrl to null`);
+      updateData = { ...parsed.data, imageUrl: null };
+    }
+  }
+
   const [recipe] = await db
     .update(recipesTable)
     .set({
-      ...parsed.data,
+      ...updateData,
       updatedAt: new Date(),
     })
     .where(eq(recipesTable.id, params.data.id))
@@ -306,6 +381,14 @@ router.post("/recipes/:id/export-to-paprika", async (req, res): Promise<void> =>
 
   const password = Buffer.from(creds.encryptedPassword, "base64").toString("utf-8");
 
+  if (recipe.imageUrl) {
+    req.log.info(
+      `[paprika] Syncing recipe id=${recipe.id} with image URL: ${recipe.imageUrl}`
+    );
+  } else {
+    req.log.info(`[paprika] Syncing recipe id=${recipe.id} without image`);
+  }
+
   try {
     const result = await syncRecipeToPaprika(creds.email, password, {
       dbId: recipe.id,
@@ -331,6 +414,16 @@ router.post("/recipes/:id/export-to-paprika", async (req, res): Promise<void> =>
         .update(recipesTable)
         .set({ exportedToPaprika: true, paprikaUid: result.uid, updatedAt: new Date() })
         .where(eq(recipesTable.id, params.data.id));
+
+      if (result.imageEmbedded) {
+        req.log.info(
+          `[paprika] Image successfully embedded in Paprika payload for recipe id=${recipe.id}`
+        );
+      } else if (recipe.imageUrl) {
+        req.log.warn(
+          `[paprika] Image could NOT be embedded in Paprika payload for recipe id=${recipe.id} (url=${recipe.imageUrl}) — recipe synced without image`
+        );
+      }
     }
 
     res.json(

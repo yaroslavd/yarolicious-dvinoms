@@ -160,7 +160,7 @@ export async function syncRecipeToPaprika(
     difficulty?: string | null;
     categoryUids?: string[];
   }
-): Promise<{ success: boolean; uid: string; message: string }> {
+): Promise<{ success: boolean; uid: string; message: string; imageEmbedded: boolean }> {
   const uid = deterministicRecipeUid(recipe.dbId);
   const created = nowTimestamp();
 
@@ -235,19 +235,35 @@ export async function syncRecipeToPaprika(
         success: false,
         uid: "",
         message: "Authentication failed — please re-enter your Paprika credentials in Settings.",
+        imageEmbedded: false,
       };
     }
     return {
       success: false,
       uid: "",
       message: `Paprika API error ${response.status}: ${text}`,
+      imageEmbedded: false,
     };
+  }
+
+  const imageEmbedded = photo !== null;
+  if (recipe.imageUrl) {
+    if (imageEmbedded) {
+      console.log(
+        `[paprika] Image successfully embedded in Paprika payload for recipe "${recipe.name}" (id=${recipe.dbId})`
+      );
+    } else {
+      console.warn(
+        `[paprika] Image could NOT be embedded in Paprika payload for recipe "${recipe.name}" (id=${recipe.dbId}) — synced without image`
+      );
+    }
   }
 
   return {
     success: true,
     uid,
     message: "Recipe successfully exported to Paprika",
+    imageEmbedded,
   };
 }
 
