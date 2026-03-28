@@ -263,7 +263,10 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
       const existingLower = new Set(existingNames.map((n) => n.toLowerCase()));
 
       // Resolve additions: use submitted UIDs as source of truth (rename-safe).
-      // Look up current live name by UID; fall back to submitted name if UID no longer exists.
+      // Look up current live name by UID; fall back to name lookup if UID no longer found.
+      // Track seen UIDs and names to deduplicate within the batch.
+      const seenUids = new Set<string>();
+      const seenNames = new Set<string>(existingLower);
       const additions: { uid: string; name: string }[] = [];
       for (let i = 0; i < app.categoryUids.length; i++) {
         const uid = app.categoryUids[i];
@@ -271,17 +274,19 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
         const live = categoryByUid.get(uid.toLowerCase());
         const resolved = live ?? categoryByName.get(submittedName.toLowerCase());
         if (!resolved) continue; // category was deleted from Paprika — skip
-        if (!existingLower.has(resolved.name.toLowerCase())) {
-          additions.push(resolved);
-        }
+        if (seenUids.has(resolved.uid.toLowerCase())) continue; // dedupe by UID
+        if (seenNames.has(resolved.name.toLowerCase())) continue; // dedupe by name vs existing
+        seenUids.add(resolved.uid.toLowerCase());
+        seenNames.add(resolved.name.toLowerCase());
+        additions.push(resolved);
       }
 
-      const newNames = additions.map((a) => a.name);
-      const mergedNames = [...existingNames, ...newNames];
+      // Strictly deduplicated merged names (existing + new additions only)
+      const mergedNames = [...existingNames, ...additions.map((a) => a.name)];
 
       // Build full UID set for Paprika sync:
       // - UIDs for newly added categories (resolved above)
-      // - UIDs for existing DB category names that still resolve to a live Paprika category
+      // - UIDs for existing DB category names that resolve to a live Paprika category
       const syncUidSet = new Set<string>(additions.map((a) => a.uid));
       for (const name of existingNames) {
         const live = categoryByName.get(name.toLowerCase());
@@ -289,7 +294,7 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
       }
       const mergedUids = Array.from(syncUidSet);
 
-      // Update DB
+      // Update DB with deduplicated merged names
       await db
         .update(recipesTable)
         .set({
@@ -298,30 +303,34 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
         })
         .where(eq(recipesTable.id, app.recipeId));
 
-      // Re-sync to Paprika if previously exported
-      if (recipe.paprikaUid) {
-        const syncResult = await syncRecipeToPaprika(creds.email, password, {
-          name: recipe.name,
-          description: recipe.description,
-          ingredients: recipe.ingredients,
-          directions: recipe.directions,
-          servings: recipe.servings,
-          totalTime: recipe.totalTime,
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          notes: recipe.notes,
-          nutritionalInfo: recipe.nutritionalInfo,
-          source: recipe.source,
-          sourceUrl: recipe.sourceUrl,
-          imageUrl: recipe.imageUrl,
-          difficulty: recipe.difficulty,
-          existingUid: recipe.paprikaUid,
-          categoryUids: mergedUids,
-        });
+      // Sync to Paprika — always (export if new, update if already exported)
+      const syncResult = await syncRecipeToPaprika(creds.email, password, {
+        name: recipe.name,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        directions: recipe.directions,
+        servings: recipe.servings,
+        totalTime: recipe.totalTime,
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        notes: recipe.notes,
+        nutritionalInfo: recipe.nutritionalInfo,
+        source: recipe.source,
+        sourceUrl: recipe.sourceUrl,
+        imageUrl: recipe.imageUrl,
+        difficulty: recipe.difficulty,
+        existingUid: recipe.paprikaUid ?? undefined,
+        categoryUids: mergedUids,
+      });
 
-        if (!syncResult.success) {
-          errors.push(`Recipe "${recipe.name}": Paprika sync failed — ${syncResult.message}`);
-        }
+      if (syncResult.success) {
+        // Persist UID and mark exported (in case this was the first sync)
+        await db
+          .update(recipesTable)
+          .set({ exportedToPaprika: true, paprikaUid: syncResult.uid, updatedAt: new Date() })
+          .where(eq(recipesTable.id, app.recipeId));
+      } else {
+        errors.push(`Recipe "${recipe.name}": Paprika sync failed — ${syncResult.message}`);
       }
 
       applied++;
