@@ -105,11 +105,18 @@ router.post("/paprika/categorize-preview", async (_req, res): Promise<void> => {
 
   const password = Buffer.from(creds.encryptedPassword, "base64").toString("utf-8");
 
-  // Fetch all recipes and live Paprika categories in parallel
-  const [recipes, rawCategories] = await Promise.all([
-    db.select().from(recipesTable).orderBy(recipesTable.id),
-    fetchPaprikaCategories(creds.email, password),
-  ]);
+  // Fetch all recipes and live Paprika categories in parallel, with explicit error handling
+  let recipes: (typeof recipesTable.$inferSelect)[] = [];
+  let rawCategories: PaprikaCategoryRaw[] = [];
+  try {
+    [recipes, rawCategories] = await Promise.all([
+      db.select().from(recipesTable).orderBy(recipesTable.id),
+      fetchPaprikaCategories(creds.email, password),
+    ]);
+  } catch (err: any) {
+    res.status(500).json({ error: `Failed to load data: ${err.message}` });
+    return;
+  }
 
   if (recipes.length === 0) {
     res.status(400).json({ error: "No recipes found. Import some recipes first." });
@@ -329,11 +336,10 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
           .update(recipesTable)
           .set({ exportedToPaprika: true, paprikaUid: syncResult.uid, updatedAt: new Date() })
           .where(eq(recipesTable.id, app.recipeId));
+        applied++; // only count fully successful (DB updated + Paprika synced) operations
       } else {
         errors.push(`Recipe "${recipe.name}": Paprika sync failed — ${syncResult.message}`);
       }
-
-      applied++;
     } catch (err: any) {
       errors.push(`Recipe ${app.recipeId}: ${err.message}`);
     }
