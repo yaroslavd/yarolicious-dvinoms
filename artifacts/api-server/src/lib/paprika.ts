@@ -1,4 +1,4 @@
-import { randomUUID, createHash } from "crypto";
+import { createHash } from "crypto";
 import zlib from "zlib";
 
 const PAPRIKA_BASE_V1 = "https://www.paprikaapp.com/api/v1";
@@ -19,6 +19,23 @@ function gzipAsync(data: Buffer): Promise<Buffer> {
 
 function nowTimestamp(): string {
   return new Date().toISOString().replace("T", " ").slice(0, 19);
+}
+
+/**
+ * Derives a stable UUID from a recipe's DB primary key.
+ * SHA-256("recipe-agent:{dbId}") → formatted as UUID.
+ * This ensures the same recipe always maps to the same Paprika entry,
+ * preventing duplicates even if the stored UID is lost.
+ */
+export function deterministicRecipeUid(dbId: number): string {
+  const hash = createHash("sha256").update(`recipe-agent:${dbId}`).digest("hex");
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    hash.slice(12, 16),
+    hash.slice(16, 20),
+    hash.slice(20, 32),
+  ].join("-");
 }
 
 async function fetchImageAsBase64(
@@ -108,6 +125,7 @@ export async function syncRecipeToPaprika(
   email: string,
   password: string,
   recipe: {
+    dbId: number;
     name: string;
     description?: string | null;
     ingredients: string;
@@ -123,11 +141,10 @@ export async function syncRecipeToPaprika(
     imageUrl?: string | null;
     categories?: string | null;
     difficulty?: string | null;
-    existingUid?: string | null;
     categoryUids?: string[];
   }
 ): Promise<{ success: boolean; uid: string; message: string }> {
-  const uid = recipe.existingUid ?? randomUUID();
+  const uid = deterministicRecipeUid(recipe.dbId);
   const created = nowTimestamp();
 
   // Download and embed image if available
@@ -210,4 +227,36 @@ export async function syncRecipeToPaprika(
     uid,
     message: "Recipe successfully exported to Paprika",
   };
+}
+
+/**
+ * Marks a recipe as deleted in Paprika by posting a minimal gzipped payload
+ * with deleted: true. Used to clean up stale/duplicate entries.
+ */
+export async function deleteFromPaprika(
+  email: string,
+  password: string,
+  uid: string
+): Promise<void> {
+  const payload = {
+    uid,
+    name: "",
+    deleted: true,
+    hash: createHash("sha256").update(uid).digest("hex"),
+  };
+  const jsonBuf = Buffer.from(JSON.stringify(payload), "utf-8");
+  const gzipped = await gzipAsync(jsonBuf);
+  const authHeader = makeAuthHeader(email, password);
+  const boundary = "----FormBoundary" + Date.now();
+  const body = makeMultipartBody(gzipped, boundary);
+  await fetch(`${PAPRIKA_BASE_V1}/sync/recipe/${uid}/`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader,
+      "User-Agent": "Paprika/3.0",
+      "Content-Type": `multipart/form-data; boundary=${boundary}`,
+      "Content-Length": String(body.length),
+    },
+    body,
+  });
 }

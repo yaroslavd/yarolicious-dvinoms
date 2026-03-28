@@ -14,6 +14,7 @@ import {
   validatePaprikaCredentials,
   fetchPaprikaCategories,
   syncRecipeToPaprika,
+  type PaprikaCategoryRaw,
 } from "../lib/paprika";
 import { openai } from "@workspace/integrations-openai-ai-server";
 
@@ -310,8 +311,10 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
         })
         .where(eq(recipesTable.id, app.recipeId));
 
-      // Sync to Paprika — always (export if new, update if already exported)
+      // Sync to Paprika — always (export if new, update if already exported).
+      // dbId drives the deterministic UID so the same recipe always updates the same Paprika entry.
       const syncResult = await syncRecipeToPaprika(creds.email, password, {
+        dbId: app.recipeId,
         name: recipe.name,
         description: recipe.description,
         ingredients: recipe.ingredients,
@@ -326,7 +329,6 @@ router.post("/paprika/categorize-apply", async (req, res): Promise<void> => {
         sourceUrl: recipe.sourceUrl,
         imageUrl: recipe.imageUrl,
         difficulty: recipe.difficulty,
-        existingUid: recipe.paprikaUid ?? undefined,
         categoryUids: mergedUids,
       });
 
