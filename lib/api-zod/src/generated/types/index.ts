@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./addCartItemsBody";
+export * from "./cartItem";
 export * from "./categorizationApplication";
 export * from "./categorizationApplyBody";
 export * from "./categorizationApplyResult";
@@ -16,6 +18,8 @@ export * from "./chatgptApiKeyStatus";
 export * from "./chatgptImportBody";
 export * from "./chatgptImportResult";
 export * from "./chatgptPendingRecipe";
+export * from "./clearCartMode";
+export * from "./clearCartParams";
 export * from "./complianceFixPreviewRequest";
 export * from "./complianceFixPreviewResponse";
 export * from "./complianceFixSuggestion";
@@ -48,4 +52,5 @@ export * from "./trashedProfile";
 export * from "./trashedRecipe";
 export * from "./trashedVersion";
 export * from "./trashItems";
+export * from "./updateCartItemBody";
 export * from "./versionComplianceScore";

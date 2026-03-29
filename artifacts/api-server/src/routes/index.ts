@@ -5,6 +5,7 @@ import paprikaRouter from "./paprika";
 import dietaryRouter from "./dietary";
 import chatgptRouter from "./chatgpt";
 import trashRouter from "./trash";
+import cartRouter from "./cart";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(recipesRouter);
 router.use(paprikaRouter);
 router.use(chatgptRouter);
 router.use(trashRouter);
+router.use(cartRouter);
 
 export default router;

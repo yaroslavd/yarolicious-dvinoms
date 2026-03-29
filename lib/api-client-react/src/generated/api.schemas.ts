@@ -381,9 +381,48 @@ export interface ChatgptApiKeyRegenResult {
   maskedKey: string;
 }
 
+export interface CartItem {
+  id: number;
+  name: string;
+  /** Numeric quantity stored as string (e.g. "1.5") */
+  quantity: string;
+  unit: string;
+  aisle: string;
+  checked: boolean;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  createdAt: string;
+}
+
+export interface AddCartItemsBody {
+  /** Free-form ingredient strings (e.g. "3 bananas", "1 cup flour") */
+  ingredients: string[];
+}
+
+export interface UpdateCartItemBody {
+  /** New numeric quantity */
+  quantity: number;
+  /** Unit string (e.g. "cup", "oz", "") */
+  unit: string;
+}
+
 export type GetRecipeComplianceScoresParams = {
   /**
    * If provided, return scores for this specific recipe version; otherwise returns base recipe scores
    */
   versionId?: number;
 };
+
+export type ClearCartParams = {
+  /**
+   * all = clear everything; checked = clear only checked items
+   */
+  mode?: ClearCartMode;
+};
+
+export type ClearCartMode = (typeof ClearCartMode)[keyof typeof ClearCartMode];
+
+export const ClearCartMode = {
+  all: "all",
+  checked: "checked",
+} as const;

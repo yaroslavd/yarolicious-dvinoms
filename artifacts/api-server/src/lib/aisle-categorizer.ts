@@ -1,0 +1,233 @@
+import { openai } from "@workspace/integrations-openai-ai-server";
+
+export type AisleCategory =
+  | "Produce"
+  | "Dairy"
+  | "Meat & Seafood"
+  | "Bakery"
+  | "Frozen"
+  | "Canned Goods"
+  | "Condiments & Sauces"
+  | "Spices & Seasonings"
+  | "Dry Goods & Pasta"
+  | "Beverages"
+  | "Other";
+
+const AISLE_CATEGORIES: AisleCategory[] = [
+  "Produce",
+  "Dairy",
+  "Meat & Seafood",
+  "Bakery",
+  "Frozen",
+  "Canned Goods",
+  "Condiments & Sauces",
+  "Spices & Seasonings",
+  "Dry Goods & Pasta",
+  "Beverages",
+  "Other",
+];
+
+const FAST_PATH: Record<string, AisleCategory> = {
+  apple: "Produce", apples: "Produce",
+  banana: "Produce", bananas: "Produce",
+  orange: "Produce", oranges: "Produce",
+  lemon: "Produce", lemons: "Produce",
+  lime: "Produce", limes: "Produce",
+  tomato: "Produce", tomatoes: "Produce",
+  potato: "Produce", potatoes: "Produce",
+  onion: "Produce", onions: "Produce",
+  garlic: "Produce",
+  carrot: "Produce", carrots: "Produce",
+  celery: "Produce",
+  spinach: "Produce",
+  lettuce: "Produce",
+  cucumber: "Produce", cucumbers: "Produce",
+  zucchini: "Produce",
+  broccoli: "Produce",
+  cauliflower: "Produce",
+  "bell pepper": "Produce", peppers: "Produce", "bell peppers": "Produce",
+  mushroom: "Produce", mushrooms: "Produce",
+  avocado: "Produce", avocados: "Produce",
+  ginger: "Produce",
+  cilantro: "Produce",
+  parsley: "Produce",
+  basil: "Produce",
+  mint: "Produce",
+  scallions: "Produce",
+  "green onion": "Produce", "green onions": "Produce",
+  shallot: "Produce", shallots: "Produce",
+  kale: "Produce",
+  arugula: "Produce",
+  strawberry: "Produce", strawberries: "Produce",
+  blueberry: "Produce", blueberries: "Produce",
+  raspberry: "Produce", raspberries: "Produce",
+  milk: "Dairy",
+  butter: "Dairy",
+  cheese: "Dairy",
+  "cheddar cheese": "Dairy",
+  "parmesan cheese": "Dairy",
+  "mozzarella cheese": "Dairy",
+  cream: "Dairy",
+  "heavy cream": "Dairy",
+  "sour cream": "Dairy",
+  yogurt: "Dairy",
+  eggs: "Dairy", egg: "Dairy",
+  "cream cheese": "Dairy",
+  "half and half": "Dairy",
+  "whole milk": "Dairy",
+  chicken: "Meat & Seafood",
+  beef: "Meat & Seafood",
+  pork: "Meat & Seafood",
+  salmon: "Meat & Seafood",
+  shrimp: "Meat & Seafood",
+  tuna: "Meat & Seafood",
+  turkey: "Meat & Seafood",
+  lamb: "Meat & Seafood",
+  bacon: "Meat & Seafood",
+  sausage: "Meat & Seafood",
+  "ground beef": "Meat & Seafood",
+  "chicken breast": "Meat & Seafood",
+  "chicken thighs": "Meat & Seafood",
+  steak: "Meat & Seafood",
+  cod: "Meat & Seafood",
+  tilapia: "Meat & Seafood",
+  "pork chops": "Meat & Seafood",
+  bread: "Bakery",
+  "sandwich bread": "Bakery",
+  rolls: "Bakery",
+  bagels: "Bakery",
+  muffins: "Bakery",
+  croissants: "Bakery",
+  baguette: "Bakery",
+  "ice cream": "Frozen",
+  "frozen peas": "Frozen",
+  "frozen corn": "Frozen",
+  "frozen spinach": "Frozen",
+  "frozen berries": "Frozen",
+  beans: "Canned Goods",
+  "black beans": "Canned Goods",
+  "kidney beans": "Canned Goods",
+  chickpeas: "Canned Goods",
+  "tomato sauce": "Canned Goods",
+  "tomato paste": "Canned Goods",
+  "diced tomatoes": "Canned Goods",
+  "crushed tomatoes": "Canned Goods",
+  "chicken broth": "Canned Goods",
+  "vegetable broth": "Canned Goods",
+  "beef broth": "Canned Goods",
+  "coconut milk": "Canned Goods",
+  ketchup: "Condiments & Sauces",
+  mustard: "Condiments & Sauces",
+  mayonnaise: "Condiments & Sauces",
+  "soy sauce": "Condiments & Sauces",
+  "hot sauce": "Condiments & Sauces",
+  vinegar: "Condiments & Sauces",
+  "apple cider vinegar": "Condiments & Sauces",
+  "balsamic vinegar": "Condiments & Sauces",
+  "olive oil": "Condiments & Sauces",
+  oil: "Condiments & Sauces",
+  "vegetable oil": "Condiments & Sauces",
+  "sesame oil": "Condiments & Sauces",
+  "worcestershire sauce": "Condiments & Sauces",
+  "fish sauce": "Condiments & Sauces",
+  "teriyaki sauce": "Condiments & Sauces",
+  honey: "Condiments & Sauces",
+  "maple syrup": "Condiments & Sauces",
+  jam: "Condiments & Sauces",
+  jelly: "Condiments & Sauces",
+  salt: "Spices & Seasonings",
+  pepper: "Spices & Seasonings",
+  "black pepper": "Spices & Seasonings",
+  "red pepper flakes": "Spices & Seasonings",
+  "cayenne pepper": "Spices & Seasonings",
+  cumin: "Spices & Seasonings",
+  paprika: "Spices & Seasonings",
+  turmeric: "Spices & Seasonings",
+  oregano: "Spices & Seasonings",
+  thyme: "Spices & Seasonings",
+  rosemary: "Spices & Seasonings",
+  cinnamon: "Spices & Seasonings",
+  "garlic powder": "Spices & Seasonings",
+  "onion powder": "Spices & Seasonings",
+  "chili powder": "Spices & Seasonings",
+  "Italian seasoning": "Spices & Seasonings",
+  "bay leaves": "Spices & Seasonings",
+  "bay leaf": "Spices & Seasonings",
+  nutmeg: "Spices & Seasonings",
+  cardamom: "Spices & Seasonings",
+  coriander: "Spices & Seasonings",
+  "smoked paprika": "Spices & Seasonings",
+  flour: "Dry Goods & Pasta",
+  "all-purpose flour": "Dry Goods & Pasta",
+  sugar: "Dry Goods & Pasta",
+  "brown sugar": "Dry Goods & Pasta",
+  "baking powder": "Dry Goods & Pasta",
+  "baking soda": "Dry Goods & Pasta",
+  rice: "Dry Goods & Pasta",
+  pasta: "Dry Goods & Pasta",
+  spaghetti: "Dry Goods & Pasta",
+  penne: "Dry Goods & Pasta",
+  fettuccine: "Dry Goods & Pasta",
+  linguine: "Dry Goods & Pasta",
+  "bread crumbs": "Dry Goods & Pasta",
+  breadcrumbs: "Dry Goods & Pasta",
+  oats: "Dry Goods & Pasta",
+  oatmeal: "Dry Goods & Pasta",
+  lentils: "Dry Goods & Pasta",
+  quinoa: "Dry Goods & Pasta",
+  cornstarch: "Dry Goods & Pasta",
+  "cocoa powder": "Dry Goods & Pasta",
+  chocolate: "Dry Goods & Pasta",
+  "vanilla extract": "Dry Goods & Pasta",
+  water: "Beverages",
+  "sparkling water": "Beverages",
+  juice: "Beverages",
+  "orange juice": "Beverages",
+  "apple juice": "Beverages",
+  wine: "Beverages",
+  "white wine": "Beverages",
+  "red wine": "Beverages",
+  beer: "Beverages",
+  stock: "Beverages",
+  coffee: "Beverages",
+  tea: "Beverages",
+};
+
+export async function categorizeIngredient(name: string): Promise<AisleCategory> {
+  const normalized = name.toLowerCase().trim();
+
+  if (FAST_PATH[normalized]) {
+    return FAST_PATH[normalized];
+  }
+
+  for (const [key, category] of Object.entries(FAST_PATH)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return category;
+    }
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_completion_tokens: 20,
+      messages: [
+        {
+          role: "system",
+          content: `You classify grocery ingredients into store aisle categories. Reply with ONLY one of these exact category names, nothing else:\n${AISLE_CATEGORIES.join(", ")}`,
+        },
+        {
+          role: "user",
+          content: `Which aisle category does "${name}" belong to?`,
+        },
+      ],
+    });
+
+    const response = completion.choices[0]?.message?.content?.trim() ?? "Other";
+    const matched = AISLE_CATEGORIES.find(
+      (cat) => cat.toLowerCase() === response.toLowerCase()
+    );
+    return matched ?? "Other";
+  } catch {
+    return "Other";
+  }
+}

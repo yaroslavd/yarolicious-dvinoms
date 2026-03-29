@@ -23,7 +23,8 @@
     "express": "^5",
     "google-auth-library": "^10.6.2",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

@@ -731,3 +731,95 @@ export const ImportFromPaprikaResponse = zod.object({
     .array(zod.string())
     .describe("Per-recipe error messages for any failures during import"),
 });
+
+/**
+ * @summary List all shopping cart items
+ */
+export const ListCartItemsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  quantity: zod
+    .string()
+    .describe('Numeric quantity stored as string (e.g. \"1.5\")'),
+  unit: zod.string(),
+  aisle: zod.string(),
+  checked: zod.boolean(),
+  thumbnailUrl: zod.string().nullish(),
+  createdAt: zod.date(),
+});
+export const ListCartItemsResponse = zod.array(ListCartItemsResponseItem);
+
+/**
+ * @summary Clear cart items (all or checked only)
+ */
+export const clearCartQueryModeDefault = `all`;
+
+export const ClearCartQueryParams = zod.object({
+  mode: zod
+    .enum(["all", "checked"])
+    .default(clearCartQueryModeDefault)
+    .describe("all = clear everything; checked = clear only checked items"),
+});
+
+/**
+ * @summary Add one or more free-form ingredient strings to the cart
+ */
+export const AddCartItemsBody = zod.object({
+  ingredients: zod
+    .array(zod.string())
+    .describe(
+      'Free-form ingredient strings (e.g. \"3 bananas\", \"1 cup flour\")',
+    ),
+});
+
+/**
+ * @summary Update quantity and/or unit of a cart item
+ */
+export const UpdateCartItemParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCartItemBody = zod.object({
+  quantity: zod.number().describe("New numeric quantity"),
+  unit: zod.string().describe('Unit string (e.g. \"cup\", \"oz\", \"\")'),
+});
+
+export const UpdateCartItemResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  quantity: zod
+    .string()
+    .describe('Numeric quantity stored as string (e.g. \"1.5\")'),
+  unit: zod.string(),
+  aisle: zod.string(),
+  checked: zod.boolean(),
+  thumbnailUrl: zod.string().nullish(),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Delete a single cart item
+ */
+export const DeleteCartItemParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Toggle the checked status of a cart item
+ */
+export const ToggleCartItemParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ToggleCartItemResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  quantity: zod
+    .string()
+    .describe('Numeric quantity stored as string (e.g. \"1.5\")'),
+  unit: zod.string(),
+  aisle: zod.string(),
+  checked: zod.boolean(),
+  thumbnailUrl: zod.string().nullish(),
+  createdAt: zod.date(),
+});

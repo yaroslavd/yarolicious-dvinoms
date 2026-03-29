@@ -19,6 +19,8 @@ tags:
     description: Dietary profiles and compliance scoring
   - name: chatgpt
     description: ChatGPT integration for recipe imports
+  - name: cart
+    description: Shopping cart management
 paths:
   /healthz:
     get:
@@ -881,6 +883,157 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /cart:
+    get:
+      operationId: listCartItems
+      tags: [cart]
+      summary: List all shopping cart items
+      responses:
+        "200":
+          description: List of cart items ordered by aisle and name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CartItem"
+    delete:
+      operationId: clearCart
+      tags: [cart]
+      summary: Clear cart items (all or checked only)
+      parameters:
+        - in: query
+          name: mode
+          schema:
+            type: string
+            enum: [all, checked]
+            default: all
+          required: false
+          description: "all = clear everything; checked = clear only checked items"
+      responses:
+        "204":
+          description: Items cleared
+
+  /cart/items:
+    post:
+      operationId: addCartItems
+      tags: [cart]
+      summary: Add one or more free-form ingredient strings to the cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCartItemsBody"
+      responses:
+        "201":
+          description: Items added or quantities aggregated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CartItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cart/items/{id}:
+    patch:
+      operationId: updateCartItem
+      tags: [cart]
+      summary: Update quantity and/or unit of a cart item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCartItemBody"
+      responses:
+        "200":
+          description: Updated cart item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartItem"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCartItem
+      tags: [cart]
+      summary: Delete a single cart item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Item deleted
+        "400":
+          description: Invalid id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cart/items/{id}/toggle:
+    patch:
+      operationId: toggleCartItem
+      tags: [cart]
+      summary: Toggle the checked status of a cart item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated cart item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartItem"
+        "400":
+          description: Invalid id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -1648,3 +1801,57 @@ components:
       required:
         - apiKey
         - maskedKey
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: string
+          description: Numeric quantity stored as string (e.g. "1.5")
+        unit:
+          type: string
+        aisle:
+          type: string
+        checked:
+          type: boolean
+        thumbnailUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - quantity
+        - unit
+        - aisle
+        - checked
+        - createdAt
+
+    AddCartItemsBody:
+      type: object
+      properties:
+        ingredients:
+          type: array
+          items:
+            type: string
+          description: Free-form ingredient strings (e.g. "3 bananas", "1 cup flour")
+      required:
+        - ingredients
+
+    UpdateCartItemBody:
+      type: object
+      properties:
+        quantity:
+          type: number
+          description: New numeric quantity
+        unit:
+          type: string
+          description: Unit string (e.g. "cup", "oz", "")
+      required:
+        - quantity
+        - unit

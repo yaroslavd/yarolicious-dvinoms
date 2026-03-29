@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { migratePaprikaUids } from "./lib/migrate-paprika-uids";
 import { seedOriginalVersionsForExistingRecipes } from "./routes/dietary";
+import { regenerateMissingThumbnails } from "./routes/cart";
 
 const rawPort = process.env["PORT"];
 
@@ -39,4 +40,7 @@ app.listen(port, async (err) => {
   } catch (seedErr: any) {
     logger.warn({ err: seedErr.message }, "Original version seeding skipped (non-fatal)");
   }
+
+  // Fire-and-forget: regenerate thumbnails for any cart items missing them.
+  regenerateMissingThumbnails().catch(() => {});
 });
