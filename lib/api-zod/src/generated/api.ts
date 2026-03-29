@@ -38,8 +38,23 @@ export const ListRecipesResponseItem = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
-  originType: zod.string().nullish(),
-  generationPrompt: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -48,8 +63,6 @@ export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
 /**
  * @summary Create a recipe manually
  */
-export const OriginType = zod.enum(["imported", "ai_generated", "manual"]);
-
 export const CreateRecipeBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
@@ -66,8 +79,23 @@ export const CreateRecipeBody = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
-  originType: OriginType.nullish(),
-  generationPrompt: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
 });
 
 /**
@@ -97,8 +125,23 @@ export const GetRecipeResponse = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
-  originType: zod.string().nullish(),
-  generationPrompt: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -126,8 +169,23 @@ export const UpdateRecipeBody = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
-  originType: OriginType.nullish(),
-  generationPrompt: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
 });
 
 export const UpdateRecipeResponse = zod.object({
@@ -150,8 +208,23 @@ export const UpdateRecipeResponse = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
-  originType: zod.string().nullish(),
-  generationPrompt: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -193,6 +266,23 @@ export const ImportRecipeFromUrlResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
 });
 
 /**
@@ -219,6 +309,23 @@ export const GenerateRecipeResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  originType: zod
+    .union([
+      zod.literal("imported"),
+      zod.literal("ai_generated"),
+      zod.literal("manual"),
+      zod.literal(null),
+    ])
+    .nullish()
+    .describe(
+      "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+    ),
+  generationPrompt: zod
+    .string()
+    .nullish()
+    .describe(
+      "The prompt used to generate this recipe (only for ai_generated recipes)",
+    ),
 });
 
 /**
@@ -375,6 +482,23 @@ export const GetDietarySuggestionsBody = zod.object({
     imageUrl: zod.string().nullish(),
     categories: zod.string().nullish(),
     difficulty: zod.string().nullish(),
+    originType: zod
+      .union([
+        zod.literal("imported"),
+        zod.literal("ai_generated"),
+        zod.literal("manual"),
+        zod.literal(null),
+      ])
+      .nullish()
+      .describe(
+        "How the recipe was created: 'imported', 'ai_generated', or 'manual'",
+      ),
+    generationPrompt: zod
+      .string()
+      .nullish()
+      .describe(
+        "The prompt used to generate this recipe (only for ai_generated recipes)",
+      ),
   }),
   profiles: zod.array(
     zod.object({
@@ -745,6 +869,10 @@ export const ListCartItemsResponseItem = zod.object({
   aisle: zod.string(),
   checked: zod.boolean(),
   thumbnailUrl: zod.string().nullish(),
+  sourceRecipe: zod
+    .string()
+    .nullish()
+    .describe("Name of the recipe this ingredient was added from, if any"),
   createdAt: zod.date(),
 });
 export const ListCartItemsResponse = zod.array(ListCartItemsResponseItem);
@@ -770,6 +898,10 @@ export const AddCartItemsBody = zod.object({
     .describe(
       'Free-form ingredient strings (e.g. \"3 bananas\", \"1 cup flour\")',
     ),
+  sourceRecipe: zod
+    .string()
+    .optional()
+    .describe("Name of the recipe these ingredients are being added from"),
 });
 
 /**
@@ -794,6 +926,10 @@ export const UpdateCartItemResponse = zod.object({
   aisle: zod.string(),
   checked: zod.boolean(),
   thumbnailUrl: zod.string().nullish(),
+  sourceRecipe: zod
+    .string()
+    .nullish()
+    .describe("Name of the recipe this ingredient was added from, if any"),
   createdAt: zod.date(),
 });
 
@@ -821,5 +957,9 @@ export const ToggleCartItemResponse = zod.object({
   aisle: zod.string(),
   checked: zod.boolean(),
   thumbnailUrl: zod.string().nullish(),
+  sourceRecipe: zod
+    .string()
+    .nullish()
+    .describe("Name of the recipe this ingredient was added from, if any"),
   createdAt: zod.date(),
 });

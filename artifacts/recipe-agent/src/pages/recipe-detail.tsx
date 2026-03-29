@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetTrashQueryKey } from "@workspace/api-client-react";
+import { getGetTrashQueryKey, useAddCartItems, getListCartItemsQueryKey } from "@workspace/api-client-react";
 import { useRoute, useLocation } from "wouter";
 import { useRecipe, useUpdateRecipe, useDeleteRecipe, useExportToPaprika } from "@/hooks/use-recipes";
 import {
@@ -34,6 +34,7 @@ import {
   ArrowRight,
   CheckCircle2,
   XCircle,
+  ShoppingCart,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -63,6 +64,8 @@ import type {
   ComplianceFixSuggestion,
   DietaryProfile,
 } from "@workspace/api-client-react";
+import { AddToCartDialog } from "@/components/add-to-cart-dialog";
+import { scaleIngredient, parseServingsCount } from "@/lib/scale-ingredient";
 
 function getScoreColor(score: number) {
   if (score >= 80) return { bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-100 dark:bg-emerald-900/30" };
@@ -470,6 +473,7 @@ export default function RecipeDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
   const [versionToDelete, setVersionToDelete] = useState<{ id: number; label: string } | null>(null);
+  const [cartDialogOpen, setCartDialogOpen] = useState(false);
   const versionSwitcherRef = useRef<HTMLDivElement>(null);
 
   const handleVersionSaved = useCallback(() => {
@@ -494,6 +498,17 @@ export default function RecipeDetail() {
   const deleteMutation = useDeleteRecipe();
   const exportMutation = useExportToPaprika();
   const deleteVersionMutation = useDeleteRecipeVersion(id);
+  const addCartItems = useAddCartItems({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListCartItemsQueryKey() });
+        toast({ title: "Ingredients added to cart" });
+      },
+      onError: () => {
+        toast({ title: "Failed to add ingredients", variant: "destructive" });
+      },
+    },
+  });
 
   const hasMultipleVersions = versions && versions.length >= 2;
   const hasProfiles = profiles && profiles.length > 0;
@@ -524,6 +539,19 @@ export default function RecipeDetail() {
       </div>
     );
   }
+
+  const handleAddToCart = (desiredServings: number) => {
+    if (!recipe) return;
+    const originalServings = parseServingsCount(recipe.servings);
+    const scaleFactor = desiredServings / originalServings;
+    const lines = displayIngredients
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const scaled = lines.map((l) => scaleIngredient(l, scaleFactor));
+    addCartItems.mutate({ data: { ingredients: scaled, sourceRecipe: recipe.name } });
+    setCartDialogOpen(false);
+  };
 
   const handleUpdate = async (data: RecipeInput) => {
     try {
@@ -739,6 +767,18 @@ export default function RecipeDetail() {
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1.5"><Users className="w-3.5 h-3.5"/> Yield</span>
               <p className="font-medium text-foreground">{recipe.servings || "—"}</p>
             </div>
+            <div className="col-span-2 md:col-span-4 flex">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCartDialogOpen(true)}
+                disabled={addCartItems.isPending}
+                className="flex items-center gap-2"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Add to Cart
+              </Button>
+            </div>
           </div>
 
           {/* Version Switcher */}
@@ -935,6 +975,15 @@ export default function RecipeDetail() {
           </div>
         </div>
       </div>
+
+      <AddToCartDialog
+        open={cartDialogOpen}
+        onOpenChange={setCartDialogOpen}
+        recipeName={recipe.name}
+        servingsStr={recipe.servings}
+        onConfirm={handleAddToCart}
+        isPending={addCartItems.isPending}
+      />
     </motion.div>
   );
 }

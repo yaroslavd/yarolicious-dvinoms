@@ -26,6 +26,7 @@ export const shoppingCartItemsTable = pgTable("shopping_cart_items", {
   aisle: text("aisle").notNull().default("Other"),
   checked: boolean("checked").notNull().default(false),
   thumbnailUrl: text("thumbnail_url"),
+  sourceRecipe: text("source_recipe"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

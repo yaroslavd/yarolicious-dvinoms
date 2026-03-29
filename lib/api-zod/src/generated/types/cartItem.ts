@@ -16,5 +16,10 @@ export interface CartItem {
   checked: boolean;
   /** @nullable */
   thumbnailUrl?: string | null;
+  /**
+   * Name of the recipe this ingredient was added from, if any
+   * @nullable
+   */
+  sourceRecipe?: string | null;
   createdAt: Date;
 }

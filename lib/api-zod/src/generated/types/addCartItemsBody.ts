@@ -9,4 +9,6 @@
 export interface AddCartItemsBody {
   /** Free-form ingredient strings (e.g. "3 bananas", "1 cup flour") */
   ingredients: string[];
+  /** Name of the recipe these ingredients are being added from */
+  sourceRecipe?: string;
 }

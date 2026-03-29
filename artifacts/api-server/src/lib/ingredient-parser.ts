@@ -72,7 +72,7 @@ const UNITS = [
   "slices?",
   "cloves?",
   "stalks?",
-  "bunches?",
+  "bunch(?:es)?",
   "heads?",
   "cans?",
   "jars?",
@@ -81,8 +81,8 @@ const UNITS = [
   "leaves?", "leaf",
   "strips?",
   "sheets?",
-  "pinches?",
-  "dashes?",
+  "pinch(?:es)?",
+  "dash(?:es)?",
   "drops?",
   "handfuls?",
   "servings?",
@@ -113,8 +113,6 @@ export interface ParsedIngredient {
 export function parseIngredient(raw: string): ParsedIngredient {
   raw = raw.trim();
 
-  const quantityParts: string[] = [];
-
   const unicodeFracPattern = `[${Object.keys(UNICODE_FRACTIONS).join("")}]`;
   const mixedNum = `\\d+\\s*(?:\\d+\\s*/\\s*\\d+|${unicodeFracPattern})`;
   const simpleFrac = `\\d+\\s*/\\s*\\d+`;
@@ -127,7 +125,7 @@ export function parseIngredient(raw: string): ParsedIngredient {
   );
 
   let rest = raw;
-  let quantity = 1;
+  let quantity = 0;
 
   const qMatch = rest.match(quantityRegex);
   if (qMatch) {
@@ -150,13 +148,40 @@ export function parseIngredient(raw: string): ParsedIngredient {
     unit = uMatch[0].trim().toLowerCase();
     rest = rest.slice(uMatch[0].length).trim();
 
+    // Strip optional alternate quantity+unit expressions such as:
+    //   "8 ounces/227 grams ..."   → slash-separated alternate
+    //   "8 oz or 227g ..."         → "or"-separated alternate
+    //   "8 oz (227g) ..."          → parenthetical alternate
+    const altPrefixMatch = rest.match(/^(?:\/\s*|\bor\s+|\(\s*)/i);
+    if (altPrefixMatch) {
+      const inParens = altPrefixMatch[0].trimStart().startsWith("(");
+      const afterPrefix = rest.slice(altPrefixMatch[0].length);
+      const altQMatch = afterPrefix.match(quantityRegex);
+      if (altQMatch && parseFraction(altQMatch[1]) !== null) {
+        const afterAltQty = afterPrefix.slice(altQMatch[0].length);
+        const altUMatch = afterAltQty.match(UNIT_REGEX);
+        if (altUMatch) {
+          rest = afterAltQty.slice(altUMatch[0].length).trim();
+          if (inParens && rest.startsWith(")")) rest = rest.slice(1).trim();
+        }
+      }
+    }
+
     const commaOrOf = rest.match(/^(?:,\s*|of\s+)/i);
     if (commaOrOf) {
       rest = rest.slice(commaOrOf[0].length);
     }
   }
 
-  const name = rest.trim() || raw.trim();
+  let name = rest.trim() || raw.trim();
+
+  // Strip cooking-purpose qualifiers (", for dusting", ", to taste", etc.) and
+  // preparation-state qualifiers that don't belong on a shopping list
+  // (", peeled", ", softened", ", finely chopped", ", at room temperature", etc.)
+  name = name.replace(
+    /,\s*(?:for\b|to\b|as\s+(?:needed|required)|optional\b|(?:at\s+)?room\s+temperature\b|(?:(?:very|lightly|finely|roughly|coarsely|thinly|freshly|well|loosely|barely|evenly)\s+)*(?:peeled|softened|melted|separated|zested|chopped|diced|minced|sliced|crushed|grated|trimmed|thawed|frozen|drained|rinsed|toasted|roasted|blanched|cooked|beaten|sifted|packed|halved|quartered|shredded|cubed|crumbled|mashed|pureed|blended|ground|pitted|seeded|deveined|browned|caramelized|cooled|warmed|chilled|stemmed|dried|soaked|torn|flaked|whipped|whisked|boiled|steamed|smoked|pickled|aged|juiced|skinned|butterflied|cold|warm)\b).*$/i,
+    ""
+  ).trim();
 
   return { quantity, unit, name };
 }

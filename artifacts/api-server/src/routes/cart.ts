@@ -6,6 +6,18 @@ import { categorizeIngredient } from "../lib/aisle-categorizer";
 import { generateIngredientThumbnail } from "../lib/thumbnail-generator";
 import { findMatchingItem, mergeQuantities, normalizeUnit } from "../lib/ingredient-dedup";
 
+/** Merge an incoming recipe name into an existing comma-separated source list. */
+function mergeSourceRecipes(
+  existing: string | null,
+  incoming: string | null | undefined,
+): string | null {
+  const incomingName = incoming?.trim() || null;
+  if (!incomingName) return existing;
+  const existingList = existing ? existing.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  if (existingList.includes(incomingName)) return existing;
+  return [...existingList, incomingName].sort().join(", ");
+}
+
 const router: IRouter = Router();
 
 router.get("/cart", async (_req, res): Promise<void> => {
@@ -17,7 +29,7 @@ router.get("/cart", async (_req, res): Promise<void> => {
 });
 
 router.post("/cart/items", async (req, res): Promise<void> => {
-  const body = req.body as { ingredients: string[] };
+  const body = req.body as { ingredients: string[]; sourceRecipe?: string };
   if (!Array.isArray(body.ingredients) || body.ingredients.length === 0) {
     res.status(400).json({ error: "ingredients must be a non-empty array" });
     return;
@@ -50,11 +62,13 @@ router.post("/cart/items", async (req, res): Promise<void> => {
       if (merged) {
         // Round to avoid floating-point noise (max 6 decimal places)
         const roundedQty = parseFloat(merged.quantity.toFixed(6));
+        const newSourceRecipe = mergeSourceRecipes(match.sourceRecipe, body.sourceRecipe);
         const [updated] = await db
           .update(shoppingCartItemsTable)
           .set({
             quantity: roundedQty.toString(),
             unit: normalizeUnit(merged.unit),
+            sourceRecipe: newSourceRecipe,
           })
           .where(eq(shoppingCartItemsTable.id, match.id))
           .returning();
@@ -72,6 +86,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
 
     // New ingredient — categorize and insert
     const aisle = await categorizeIngredient(name);
+    const sourceRecipe = body.sourceRecipe?.trim() || null;
     const [newItem] = await db
       .insert(shoppingCartItemsTable)
       .values({
@@ -81,6 +96,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
         aisle,
         checked: false,
         thumbnailUrl: null,
+        sourceRecipe,
       })
       .returning();
 

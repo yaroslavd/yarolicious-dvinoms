@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { ShoppingCart as CartIcon, Trash2, Check, Plus, X, ChevronUp, ChevronDown } from "lucide-react";
+import { ShoppingCart as CartIcon, Trash2, Check, Plus, X, ChevronUp, ChevronDown, BookOpen } from "lucide-react";
 import {
   useListCartItems,
   useAddCartItems,
@@ -110,11 +110,13 @@ function CartItemRow({
   onToggle,
   onDelete,
   onUpdate,
+  showSource,
 }: {
   item: CartItem;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
   onUpdate: (id: number, quantity: number, unit: string) => void;
+  showSource: boolean;
 }) {
   const [imgError, setImgError] = useState(false);
 
@@ -135,6 +137,9 @@ function CartItemRow({
     setLocalQty(parseFloat(item.quantity));
     setLocalUnit(item.unit);
   }, [item.quantity, item.unit]);
+
+  // qty=0 with no unit means "unspecified" (e.g. "salt, to taste") — show no stepper
+  const isUnspecified = localQty === 0 && !localUnit;
 
   // Use 0.1 steps for measured ingredients under 10; whole steps for discrete ones
   const step = localUnit && localQty < 10 ? 0.1 : 1;
@@ -233,85 +238,103 @@ function CartItemRow({
       </div>
 
       {/* Quantity stepper + unit — fixed width so names always align */}
-      <div className="flex items-center gap-2 w-24 shrink-0">
-        {/* Stepper: ▲ qty ▼ */}
-        <div className="flex flex-col items-center">
-          <button
-            onClick={handleIncrease}
-            className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-            aria-label="Increase quantity"
-          >
-            <ChevronUp className="w-3.5 h-3.5" />
-          </button>
-          {isEditingQty ? (
-            <input
-              type="text"
-              inputMode="decimal"
-              value={editDraft}
-              onChange={(e) => setEditDraft(e.target.value)}
-              onBlur={commitDraft}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") { e.currentTarget.blur(); }
-                if (e.key === "Escape") { setIsEditingQty(false); }
-              }}
-              autoFocus
-              onFocus={(e) => e.currentTarget.select()}
-              className="text-sm font-semibold tabular-nums text-center leading-none py-0.5 w-10 bg-transparent border-b border-primary outline-none"
-            />
-          ) : (
-            <span
-              onClick={startEditing}
-              className="text-sm font-semibold tabular-nums min-w-[1.5rem] text-center leading-none py-0.5 cursor-text hover:text-primary transition-colors"
+      {isUnspecified ? (
+        <div className="w-24 shrink-0" />
+      ) : (
+        <div className="flex items-center gap-2 w-24 shrink-0">
+          {/* Stepper: ▲ qty ▼ */}
+          <div className="flex flex-col items-center">
+            <button
+              onClick={handleIncrease}
+              className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+              aria-label="Increase quantity"
             >
-              {localUnit && localQty < 10 ? localQty.toFixed(1) : formatQty(localQty)}
-            </span>
-          )}
-          <button
-            onClick={handleDecrease}
-            disabled={parseFloat((localQty - step).toFixed(4)) <= 0}
-            className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded disabled:opacity-25 disabled:cursor-not-allowed"
-            aria-label="Decrease quantity"
-          >
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Unit + switcher */}
-        {localUnit && (
-          <div className="flex flex-col items-start gap-0.5 min-w-[2.5rem]">
-            <span className="text-xs font-medium text-foreground leading-none">
-              {localUnit}
-            </span>
-            {altUnits.length > 0 && (
-              <div className="flex items-center gap-1">
-                {altUnits.map((u, i) => (
-                  <span key={u} className="flex items-center gap-1">
-                    {i > 0 && (
-                      <span className="text-[9px] text-muted-foreground/40">·</span>
-                    )}
-                    <button
-                      onClick={() => handleUnitSwitch(u)}
-                      className="text-[10px] text-muted-foreground/60 hover:text-primary transition-colors leading-none"
-                      title={`Switch to ${u}`}
-                    >
-                      {u}
-                    </button>
-                  </span>
-                ))}
-              </div>
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+            {isEditingQty ? (
+              <input
+                type="text"
+                inputMode="decimal"
+                value={editDraft}
+                onChange={(e) => setEditDraft(e.target.value)}
+                onBlur={commitDraft}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.currentTarget.blur(); }
+                  if (e.key === "Escape") { setIsEditingQty(false); }
+                }}
+                autoFocus
+                onFocus={(e) => e.currentTarget.select()}
+                className="text-sm font-semibold tabular-nums text-center leading-none py-0.5 w-10 bg-transparent border-b border-primary outline-none"
+              />
+            ) : (
+              <span
+                onClick={startEditing}
+                className="text-sm font-semibold tabular-nums min-w-[1.5rem] text-center leading-none py-0.5 cursor-text hover:text-primary transition-colors"
+              >
+                {localUnit && localQty < 10 ? localQty.toFixed(1) : formatQty(localQty)}
+              </span>
             )}
+            <button
+              onClick={handleDecrease}
+              disabled={parseFloat((localQty - step).toFixed(4)) <= 0}
+              className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded disabled:opacity-25 disabled:cursor-not-allowed"
+              aria-label="Decrease quantity"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
           </div>
+
+          {/* Unit + switcher */}
+          {localUnit && (
+            <div className="flex flex-col items-start gap-0.5 min-w-[2.5rem]">
+              <span className="text-xs font-medium text-foreground leading-none">
+                {localUnit}
+              </span>
+              {altUnits.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {altUnits.map((u, i) => (
+                    <span key={u} className="flex items-center gap-1">
+                      {i > 0 && (
+                        <span className="text-[9px] text-muted-foreground/40">·</span>
+                      )}
+                      <button
+                        onClick={() => handleUnitSwitch(u)}
+                        className="text-[10px] text-muted-foreground/60 hover:text-primary transition-colors leading-none"
+                        title={`Switch to ${u}`}
+                      >
+                        {u}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Ingredient name + optional recipe source */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <span
+          className={`text-sm truncate ${
+            item.checked ? "line-through text-muted-foreground" : "text-foreground"
+          }`}
+        >
+          {item.name}
+        </span>
+        {showSource && item.sourceRecipe && (
+          <span className="flex flex-wrap gap-1 mt-0.5">
+            {item.sourceRecipe.split(",").map((name, i) => (
+              <span
+                key={i}
+                className="text-[10px] leading-tight text-muted-foreground/70 bg-muted/60 rounded px-1.5 py-0.5"
+              >
+                {name.trim()}
+              </span>
+            ))}
+          </span>
         )}
       </div>
-
-      {/* Ingredient name */}
-      <span
-        className={`flex-1 min-w-0 text-sm truncate ${
-          item.checked ? "line-through text-muted-foreground" : "text-foreground"
-        }`}
-      >
-        {item.name}
-      </span>
 
       {/* Delete */}
       <button
@@ -334,6 +357,17 @@ export default function ShoppingCartPage() {
   const { toast } = useToast();
   const [inputValue, setInputValue] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [showSource, setShowSource] = useState(() => {
+    try { return localStorage.getItem("cart-show-source") !== "false"; } catch { return true; }
+  });
+
+  const toggleShowSource = () => {
+    setShowSource((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("cart-show-source", String(next)); } catch {}
+      return next;
+    });
+  };
 
   const { data: items = [], isLoading } = useListCartItems({
     query: {
@@ -433,6 +467,7 @@ export default function ShoppingCartPage() {
 
   const totalCount = items.length;
   const checkedCount = items.filter((i) => i.checked).length;
+  const hasSourceItems = items.some((i: CartItem) => Boolean(i.sourceRecipe));
 
   return (
     <div className="flex flex-col gap-6">
@@ -453,6 +488,20 @@ export default function ShoppingCartPage() {
                 }`}
           </p>
         </div>
+        {hasSourceItems && (
+          <button
+            onClick={toggleShowSource}
+            className={`ml-auto flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 border transition-colors ${
+              showSource
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground"
+            }`}
+            title={showSource ? "Hide recipe sources" : "Show recipe sources"}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            {showSource ? "Hide sources" : "Show sources"}
+          </button>
+        )}
       </div>
 
       {/* Add item */}
@@ -552,6 +601,7 @@ export default function ShoppingCartPage() {
                         onToggle={(id) => toggleItem.mutate({ id })}
                         onDelete={(id) => deleteItem.mutate({ id })}
                         onUpdate={handleUpdate}
+                        showSource={showSource}
                       />
                     ))}
                   </AnimatePresence>

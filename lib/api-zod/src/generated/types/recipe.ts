@@ -5,6 +5,7 @@
  * Recipe Import Agent API
  * OpenAPI spec version: 0.1.0
  */
+import type { RecipeOriginType } from "./recipeOriginType";
 
 export interface Recipe {
   id: number;
@@ -40,9 +41,15 @@ export interface Recipe {
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;
-  /** @nullable */
-  originType?: string | null;
-  /** @nullable */
+  /**
+   * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+   * @nullable
+   */
+  originType?: RecipeOriginType;
+  /**
+   * The prompt used to generate this recipe (only for ai_generated recipes)
+   * @nullable
+   */
   generationPrompt?: string | null;
   createdAt: Date;
   updatedAt: Date;

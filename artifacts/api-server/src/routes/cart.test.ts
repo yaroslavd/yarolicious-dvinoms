@@ -215,6 +215,81 @@ describe("Shopping Cart API", () => {
       expect(categorizeIngredient).toHaveBeenCalledWith("chicken breast");
     });
 
+    it("stores sourceRecipe in the inserted values when provided", async () => {
+      const { default: supertest } = await import("supertest");
+
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([]),
+      } as any);
+      vi.mocked(categorizeIngredient).mockResolvedValue("Produce");
+      vi.mocked(generateIngredientThumbnail).mockResolvedValue(null);
+
+      const itemWithSource = { ...BANANA_ITEM, sourceRecipe: "Banana Bread" };
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([itemWithSource]),
+        }),
+      } as any);
+
+      await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["2 bananas"], sourceRecipe: "Banana Bread" })
+        .expect(201);
+
+      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(valuesCall.sourceRecipe).toBe("Banana Bread");
+    });
+
+    it("stores null sourceRecipe when no sourceRecipe is provided", async () => {
+      const { default: supertest } = await import("supertest");
+
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([]),
+      } as any);
+      vi.mocked(categorizeIngredient).mockResolvedValue("Produce");
+      vi.mocked(generateIngredientThumbnail).mockResolvedValue(null);
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([BANANA_ITEM]),
+        }),
+      } as any);
+
+      await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["2 bananas"] })
+        .expect(201);
+
+      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(valuesCall.sourceRecipe).toBeNull();
+    });
+
+    it("stores quantity as '0' for ingredients with no numeric amount", async () => {
+      const { default: supertest } = await import("supertest");
+
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([]),
+      } as any);
+      vi.mocked(categorizeIngredient).mockResolvedValue("Spices & Seasonings");
+      vi.mocked(generateIngredientThumbnail).mockResolvedValue(null);
+
+      vi.mocked(db.insert).mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ ...BANANA_ITEM, name: "salt", quantity: "0", unit: "" }]),
+        }),
+      } as any);
+
+      await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["salt, to taste"] })
+        .expect(201);
+
+      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(valuesCall.name).toBe("salt");
+      expect(valuesCall.quantity).toBe("0");
+      expect(valuesCall.unit).toBe("");
+    });
+
     it("deduplicates by updating quantity when same ingredient already exists", async () => {
       const { default: supertest } = await import("supertest");
 
@@ -294,6 +369,89 @@ describe("Shopping Cart API", () => {
       // Weight units merged — should update, not insert
       expect(db.update).toHaveBeenCalledOnce();
       expect(db.insert).not.toHaveBeenCalled();
+    });
+
+    it("appends new recipe name to sourceRecipe when deduplicating from a different recipe", async () => {
+      const { default: supertest } = await import("supertest");
+
+      // Banana already in cart, added from "Apple Pie"
+      const bananaWithSource = { ...BANANA_ITEM, sourceRecipe: "Apple Pie" };
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([bananaWithSource]),
+      } as any);
+
+      const updatedBanana = { ...bananaWithSource, quantity: "5", sourceRecipe: "Apple Pie, Banana Bread" }; // already alpha
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([updatedBanana]),
+          }),
+        }),
+      } as any);
+
+      const res = await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["3 bananas"], sourceRecipe: "Banana Bread" })
+        .expect(201);
+
+      expect(db.update).toHaveBeenCalledOnce();
+      expect(db.insert).not.toHaveBeenCalled();
+      // The set call should include the merged sourceRecipe
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(setCall.sourceRecipe).toBe("Apple Pie, Banana Bread");
+    });
+
+    it("sorts recipe names alphabetically when merging (new name sorts before existing)", async () => {
+      const { default: supertest } = await import("supertest");
+
+      // Banana already in cart from "Zucchini Bread" — incoming "Apple Pie" should sort first
+      const bananaWithSource = { ...BANANA_ITEM, sourceRecipe: "Zucchini Bread" };
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([bananaWithSource]),
+      } as any);
+
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ ...bananaWithSource, quantity: "5", sourceRecipe: "Apple Pie, Zucchini Bread" }]),
+          }),
+        }),
+      } as any);
+
+      await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["3 bananas"], sourceRecipe: "Apple Pie" })
+        .expect(201);
+
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(setCall.sourceRecipe).toBe("Apple Pie, Zucchini Bread");
+    });
+
+    it("does not duplicate recipe name if same recipe adds same ingredient again", async () => {
+      const { default: supertest } = await import("supertest");
+
+      // Banana already in cart from "Apple Pie"
+      const bananaWithSource = { ...BANANA_ITEM, sourceRecipe: "Apple Pie" };
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockResolvedValue([bananaWithSource]),
+      } as any);
+
+      vi.mocked(db.update).mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ ...bananaWithSource, quantity: "5" }]),
+          }),
+        }),
+      } as any);
+
+      await supertest(app)
+        .post("/api/cart/items")
+        .send({ ingredients: ["3 bananas"], sourceRecipe: "Apple Pie" })
+        .expect(201);
+
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      // Should still just be "Apple Pie", not "Apple Pie, Apple Pie"
+      expect(setCall.sourceRecipe).toBe("Apple Pie");
     });
 
     it("adds a new item even when cart already has a different ingredient", async () => {

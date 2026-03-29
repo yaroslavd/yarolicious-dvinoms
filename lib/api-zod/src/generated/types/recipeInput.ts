@@ -5,6 +5,7 @@
  * Recipe Import Agent API
  * OpenAPI spec version: 0.1.0
  */
+import type { RecipeInputOriginType } from "./recipeInputOriginType";
 
 export interface RecipeInput {
   name: string;
@@ -34,8 +35,14 @@ export interface RecipeInput {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
-  /** @nullable */
-  originType?: string | null;
-  /** @nullable */
+  /**
+   * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+   * @nullable
+   */
+  originType?: RecipeInputOriginType;
+  /**
+   * The prompt used to generate this recipe (only for ai_generated recipes)
+   * @nullable
+   */
   generationPrompt?: string | null;
 }

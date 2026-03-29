@@ -13,6 +13,20 @@ export interface ErrorResponse {
   error: string;
 }
 
+/**
+ * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+ * @nullable
+ */
+export type RecipeInputOriginType =
+  | (typeof RecipeInputOriginType)[keyof typeof RecipeInputOriginType]
+  | null;
+
+export const RecipeInputOriginType = {
+  imported: "imported",
+  ai_generated: "ai_generated",
+  manual: "manual",
+} as const;
+
 export interface RecipeInput {
   name: string;
   /** @nullable */
@@ -41,11 +55,31 @@ export interface RecipeInput {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
-  /** @nullable */
-  originType?: string | null;
-  /** @nullable */
+  /**
+   * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+   * @nullable
+   */
+  originType?: RecipeInputOriginType;
+  /**
+   * The prompt used to generate this recipe (only for ai_generated recipes)
+   * @nullable
+   */
   generationPrompt?: string | null;
 }
+
+/**
+ * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+ * @nullable
+ */
+export type RecipeOriginType =
+  | (typeof RecipeOriginType)[keyof typeof RecipeOriginType]
+  | null;
+
+export const RecipeOriginType = {
+  imported: "imported",
+  ai_generated: "ai_generated",
+  manual: "manual",
+} as const;
 
 export interface Recipe {
   id: number;
@@ -81,9 +115,15 @@ export interface Recipe {
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;
-  /** @nullable */
-  originType?: string | null;
-  /** @nullable */
+  /**
+   * How the recipe was created: 'imported', 'ai_generated', or 'manual'
+   * @nullable
+   */
+  originType?: RecipeOriginType;
+  /**
+   * The prompt used to generate this recipe (only for ai_generated recipes)
+   * @nullable
+   */
   generationPrompt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -391,12 +431,19 @@ export interface CartItem {
   checked: boolean;
   /** @nullable */
   thumbnailUrl?: string | null;
+  /**
+   * Name of the recipe this ingredient was added from, if any
+   * @nullable
+   */
+  sourceRecipe?: string | null;
   createdAt: string;
 }
 
 export interface AddCartItemsBody {
   /** Free-form ingredient strings (e.g. "3 bananas", "1 cup flour") */
   ingredients: string[];
+  /** Name of the recipe these ingredients are being added from */
+  sourceRecipe?: string;
 }
 
 export interface UpdateCartItemBody {

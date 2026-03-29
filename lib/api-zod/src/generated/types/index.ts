@@ -44,6 +44,8 @@ export * from "./paprikaImportResult";
 export * from "./projectedScore";
 export * from "./recipe";
 export * from "./recipeInput";
+export * from "./recipeInputOriginType";
+export * from "./recipeOriginType";
 export * from "./recipeVersion";
 export * from "./recipeVersionSummary";
 export * from "./saveComplianceVersionRequest";

@@ -1820,6 +1820,9 @@ components:
           type: boolean
         thumbnailUrl:
           type: ["string", "null"]
+        sourceRecipe:
+          type: ["string", "null"]
+          description: Name of the recipe this ingredient was added from, if any
         createdAt:
           type: string
           format: date-time
@@ -1840,6 +1843,9 @@ components:
           items:
             type: string
           description: Free-form ingredient strings (e.g. "3 bananas", "1 cup flour")
+        sourceRecipe:
+          type: string
+          description: Name of the recipe these ingredients are being added from
       required:
         - ingredients
 
