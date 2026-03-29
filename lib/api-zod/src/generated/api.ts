@@ -38,6 +38,8 @@ export const ListRecipesResponseItem = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
+  originType: zod.string().nullish(),
+  generationPrompt: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -46,6 +48,8 @@ export const ListRecipesResponse = zod.array(ListRecipesResponseItem);
 /**
  * @summary Create a recipe manually
  */
+export const OriginType = zod.enum(["imported", "ai_generated", "manual"]);
+
 export const CreateRecipeBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
@@ -62,6 +66,8 @@ export const CreateRecipeBody = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  originType: OriginType.nullish(),
+  generationPrompt: zod.string().nullish(),
 });
 
 /**
@@ -91,6 +97,8 @@ export const GetRecipeResponse = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
+  originType: zod.string().nullish(),
+  generationPrompt: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -118,6 +126,8 @@ export const UpdateRecipeBody = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
+  originType: OriginType.nullish(),
+  generationPrompt: zod.string().nullish(),
 });
 
 export const UpdateRecipeResponse = zod.object({
@@ -140,6 +150,8 @@ export const UpdateRecipeResponse = zod.object({
   rating: zod.number().describe("Star rating from Paprika (0-5)"),
   exportedToPaprika: zod.boolean(),
   paprikaUid: zod.string().nullish(),
+  originType: zod.string().nullish(),
+  generationPrompt: zod.string().nullish(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });

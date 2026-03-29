@@ -40,7 +40,7 @@ export default function GenerateRecipe() {
           preferences: preferences || null
         } 
       });
-      setGeneratedData(data);
+      setGeneratedData({ ...data, originType: 'ai_generated', generationPrompt: description });
       setSuggestions([]);
 
       if (selectedProfileIds.length > 0 && profiles) {

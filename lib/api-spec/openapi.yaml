@@ -932,6 +932,13 @@ components:
           type: ["string", "null"]
         difficulty:
           type: ["string", "null"]
+        originType:
+          type: ["string", "null"]
+          enum: ["imported", "ai_generated", "manual", null]
+          description: "How the recipe was created: 'imported', 'ai_generated', or 'manual'"
+        generationPrompt:
+          type: ["string", "null"]
+          description: The prompt used to generate this recipe (only for ai_generated recipes)
       required:
         - name
         - ingredients
@@ -979,6 +986,13 @@ components:
           type: boolean
         paprikaUid:
           type: ["string", "null"]
+        originType:
+          type: ["string", "null"]
+          enum: ["imported", "ai_generated", "manual", null]
+          description: "How the recipe was created: 'imported', 'ai_generated', or 'manual'"
+        generationPrompt:
+          type: ["string", "null"]
+          description: The prompt used to generate this recipe (only for ai_generated recipes)
         createdAt:
           type: string
           format: date-time

@@ -40,6 +40,10 @@ export interface Recipe {
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;
+  /** @nullable */
+  originType?: string | null;
+  /** @nullable */
+  generationPrompt?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

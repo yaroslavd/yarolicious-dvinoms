@@ -41,6 +41,10 @@ export interface RecipeInput {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
+  /** @nullable */
+  originType?: string | null;
+  /** @nullable */
+  generationPrompt?: string | null;
 }
 
 export interface Recipe {
@@ -77,6 +81,10 @@ export interface Recipe {
   exportedToPaprika: boolean;
   /** @nullable */
   paprikaUid?: string | null;
+  /** @nullable */
+  originType?: string | null;
+  /** @nullable */
+  generationPrompt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -63,7 +63,11 @@ export function RecipeForm({ initialData, onSubmit, isSubmitting, submitLabel = 
   });
 
   const handleSubmit = form.handleSubmit((data) => {
-    onSubmit(data as RecipeInput);
+    onSubmit({
+      ...data,
+      originType: initialData?.originType ?? null,
+      generationPrompt: initialData?.generationPrompt ?? null,
+    } as RecipeInput);
   });
 
   return (

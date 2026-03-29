@@ -34,4 +34,8 @@ export interface RecipeInput {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
+  /** @nullable */
+  originType?: string | null;
+  /** @nullable */
+  generationPrompt?: string | null;
 }

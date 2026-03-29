@@ -32,7 +32,7 @@ export default function ImportRecipe() {
     
     try {
       const data = await importMutation.mutateAsync({ data: { url } });
-      setImportedData(data);
+      setImportedData({ ...data, originType: 'imported' });
       setSuggestions([]);
 
       if (selectedProfileIds.length > 0 && profiles) {

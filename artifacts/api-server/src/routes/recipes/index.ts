@@ -155,6 +155,8 @@ router.post("/recipes", async (req, res): Promise<void> => {
       categories: parsed.data.categories ?? null,
       difficulty: parsed.data.difficulty ?? null,
       exportedToPaprika: false,
+      originType: parsed.data.originType ?? null,
+      generationPrompt: parsed.data.generationPrompt ?? null,
     })
     .returning();
 

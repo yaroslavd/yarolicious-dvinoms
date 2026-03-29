@@ -866,12 +866,20 @@ export default function RecipeDetail() {
                 ))}
               </ul>
 
-              {recipe.sourceUrl && (
+              {recipe.originType === 'imported' && recipe.sourceUrl && (
                 <div className="mt-10 p-4 bg-muted/50 rounded-xl">
-                  <p className="text-sm font-semibold text-foreground mb-2">Original Source</p>
+                  <p className="text-sm font-semibold text-foreground mb-2">Origin</p>
                   <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm flex items-center gap-1 break-all">
-                    {recipe.source || recipe.sourceUrl} <ExternalLink className="w-3 h-3" />
+                    Link to original recipe <ExternalLink className="w-3 h-3" />
                   </a>
+                </div>
+              )}
+
+              {recipe.originType === 'ai_generated' && recipe.generationPrompt && (
+                <div className="mt-10 p-4 bg-muted/50 rounded-xl">
+                  <p className="text-sm font-semibold text-foreground mb-2">Origin</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">AI Generation Prompt</p>
+                  <p className="text-sm text-foreground leading-relaxed">{recipe.generationPrompt}</p>
                 </div>
               )}
 
