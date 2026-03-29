@@ -91,6 +91,20 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### E2E Testing (Playwright)
+
+End-to-end tests use Playwright with Chromium. The browser must be installed before running tests:
+
+```bash
+pnpm exec playwright install chromium
+```
+
+**Important (Replit/NixOS):** Do NOT use `--with-deps` flag — it attempts apt installs which are not available in Replit. Instead, system-level browser dependencies (libgbm, mesa) are installed via Nix and persisted in `replit.nix`. The post-merge script installs the browser binary automatically.
+
+Run e2e tests: `pnpm test:e2e`
+Config: `playwright.config.ts`
+Tests: `tests/e2e/`
+
 ### Testing
 
 The `api-server` package uses **Vitest** for automated testing:
