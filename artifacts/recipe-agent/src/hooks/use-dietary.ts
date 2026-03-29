@@ -99,8 +99,14 @@ export function useSaveComplianceVersion(recipeId: number) {
   const queryClient = useQueryClient();
   return useOrvalSaveComplianceVersion({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: getListRecipeVersionsQueryKey(recipeId) });
+        if (data?.id) {
+          const params = { versionId: data.id };
+          queryClient.invalidateQueries({
+            queryKey: getGetRecipeComplianceScoresQueryKey(recipeId, params),
+          });
+        }
       },
     },
   });
@@ -132,6 +138,13 @@ export function useRecipeComplianceScoresForVersion(recipeId: number, versionId:
     query: {
       queryKey: getGetRecipeComplianceScoresQueryKey(recipeId, params),
       enabled,
+      refetchInterval: (query) => {
+        const data = query.state.data;
+        if (versionId && (!data || (Array.isArray(data) && data.length === 0))) {
+          return 3000;
+        }
+        return false;
+      },
     },
   });
 }

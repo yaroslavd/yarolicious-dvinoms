@@ -481,7 +481,7 @@ export default function RecipeDetail() {
   const { data: recipe, isLoading, isError } = useRecipe(id);
   const { data: paprikaCreds } = usePaprikaCredentials();
   const { data: baseComplianceScores } = useRecipeComplianceScoresForVersion(id, null);
-  const { data: complianceScores, isLoading: complianceLoading } = useRecipeComplianceScoresForVersion(
+  const { data: complianceScores, isLoading: complianceLoading, isFetching: complianceFetching } = useRecipeComplianceScoresForVersion(
     id,
     selectedVersionId
   );
@@ -496,6 +496,8 @@ export default function RecipeDetail() {
   const deleteVersionMutation = useDeleteRecipeVersion(id);
 
   const hasMultipleVersions = versions && versions.length >= 2;
+  const hasProfiles = profiles && profiles.length > 0;
+  const scoresStillComputing = selectedVersionId !== null && !complianceLoading && hasProfiles && (!complianceScores || complianceScores.length === 0) && complianceFetching;
 
   const displayIngredients = selectedVersionId && selectedVersion
     ? selectedVersion.ingredients
@@ -874,10 +876,10 @@ export default function RecipeDetail() {
               )}
 
               {/* Compliance Section on left column */}
-              {complianceLoading ? (
+              {complianceLoading || scoresStillComputing ? (
                 <div className="mt-12 flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Computing compliance…
+                  Computing compliance scores…
                 </div>
               ) : complianceScores && complianceScores.length > 0 ? (
                 <ComplianceSection
