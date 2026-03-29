@@ -9,7 +9,9 @@
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "push:dev": "node ./push-dev.mjs",
+    "push:dev-force": "node ./push-dev.mjs --force"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
