@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, isNull, and } from "drizzle-orm";
 import { db, recipesTable, paprikaCredentialsTable } from "@workspace/db";
 import { scoreRecipeForAllProfiles } from "../dietary";
 import {
@@ -75,6 +75,7 @@ router.get("/recipes", async (req, res): Promise<void> => {
   const recipes = await db
     .select()
     .from(recipesTable)
+    .where(isNull(recipesTable.deletedAt))
     .orderBy(recipesTable.createdAt);
   res.json(ListRecipesResponse.parse(recipes));
 });
@@ -280,7 +281,7 @@ router.get("/recipes/:id", async (req, res): Promise<void> => {
   const [recipe] = await db
     .select()
     .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id));
+    .where(and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)));
 
   if (!recipe) {
     res.status(404).json({ error: "Recipe not found" });
@@ -346,7 +347,29 @@ router.delete("/recipes/:id", async (req, res): Promise<void> => {
   }
 
   const [recipe] = await db
-    .delete(recipesTable)
+    .update(recipesTable)
+    .set({ deletedAt: new Date() })
+    .where(and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)))
+    .returning();
+
+  if (!recipe) {
+    res.status(404).json({ error: "Recipe not found" });
+    return;
+  }
+
+  res.sendStatus(204);
+});
+
+router.post("/recipes/:id/restore", async (req, res): Promise<void> => {
+  const params = DeleteRecipeParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [recipe] = await db
+    .update(recipesTable)
+    .set({ deletedAt: null })
     .where(eq(recipesTable.id, params.data.id))
     .returning();
 

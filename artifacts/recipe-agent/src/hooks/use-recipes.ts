@@ -19,6 +19,7 @@ export function useRecipes() {
 export function useRecipe(id: number) {
   return useGetRecipe(id, {
     query: {
+      queryKey: getGetRecipeQueryKey(id),
       enabled: !isNaN(id) && id > 0,
     }
   });

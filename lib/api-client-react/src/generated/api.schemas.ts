@@ -188,6 +188,8 @@ export interface StoredComplianceScore {
   profileName: string;
   score: number;
   reason: string;
+  prosList?: string[] | null;
+  consList?: string[] | null;
   updatedAt: string;
 }
 
@@ -208,39 +210,88 @@ export interface DietarySuggestionsResponse {
   suggestions: DietarySuggestion[];
 }
 
-export interface ChatgptImportBody {
+export interface TrashedRecipe {
+  id: number;
   name: string;
-  /** @nullable */
   description?: string | null;
-  ingredients: string;
-  directions: string;
-  /** @nullable */
-  servings?: string | null;
-  /** @nullable */
-  totalTime?: string | null;
-  /** @nullable */
-  prepTime?: string | null;
-  /** @nullable */
-  cookTime?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  nutritionalInfo?: string | null;
-  /** @nullable */
-  source?: string | null;
-  /** @nullable */
-  sourceUrl?: string | null;
-  /** @nullable */
-  imageUrl?: string | null;
-  /** @nullable */
-  categories?: string | null;
-  /** @nullable */
-  difficulty?: string | null;
+  deletedAt: string;
 }
 
-export interface ChatgptImportResponse {
-  message: string;
+export interface TrashedProfile {
   id: number;
+  name: string;
+  description: string;
+  deletedAt: string;
+}
+
+export interface TrashedVersion {
+  id: number;
+  recipeId: number;
+  recipeName: string;
+  label: string;
+  deletedAt: string;
+}
+
+export interface TrashItems {
+  recipes: TrashedRecipe[];
+  profiles: TrashedProfile[];
+  versions: TrashedVersion[];
+}
+
+export interface VersionComplianceScore {
+  profileId: number;
+  profileName: string;
+  score: number;
+}
+
+export interface RecipeVersionSummary {
+  id: number;
+  recipeId: number;
+  label: string;
+  isOriginal: boolean;
+  createdAt: string;
+  scores?: VersionComplianceScore[] | null;
+}
+
+export interface RecipeVersion {
+  id: number;
+  recipeId: number;
+  label: string;
+  ingredients: string;
+  directions: string;
+  isOriginal: boolean;
+  createdAt: string;
+}
+
+export interface ComplianceFixSuggestion {
+  field: string;
+  original: string;
+  suggested: string;
+  description: string;
+  profileName: string;
+  scoreBefore: number;
+  scoreAfter: number;
+}
+
+export interface ComplianceFixPreviewRequest {
+  profileIds: number[];
+}
+
+export interface ProjectedScore {
+  profileId: number;
+  profileName: string;
+  scoreBefore: number;
+  scoreAfter: number;
+}
+
+export interface ComplianceFixPreviewResponse {
+  suggestions: ComplianceFixSuggestion[];
+  projectedScores: ProjectedScore[];
+}
+
+export interface SaveComplianceVersionRequest {
+  label: string;
+  suggestions: ComplianceFixSuggestion[];
 }
 
 export interface ChatgptPendingRecipe {
@@ -276,13 +327,55 @@ export interface ChatgptPendingRecipe {
   createdAt: string;
 }
 
-export interface GetApiKeyResponse {
+export interface ChatgptImportBody {
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  ingredients: string;
+  directions: string;
+  /** @nullable */
+  servings?: string | null;
+  /** @nullable */
+  totalTime?: string | null;
+  /** @nullable */
+  prepTime?: string | null;
+  /** @nullable */
+  cookTime?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  nutritionalInfo?: string | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  categories?: string | null;
+  /** @nullable */
+  difficulty?: string | null;
+}
+
+export interface ChatgptImportResult {
+  message: string;
+  id: number;
+}
+
+export interface ChatgptApiKeyStatus {
   configured: boolean;
   /** @nullable */
   maskedKey?: string | null;
 }
 
-export interface RegenerateApiKeyResponse {
+export interface ChatgptApiKeyRegenResult {
   apiKey: string;
   maskedKey: string;
 }
+
+export type GetRecipeComplianceScoresParams = {
+  /**
+   * If provided, return scores for this specific recipe version; otherwise returns base recipe scores
+   */
+  versionId?: number;
+};

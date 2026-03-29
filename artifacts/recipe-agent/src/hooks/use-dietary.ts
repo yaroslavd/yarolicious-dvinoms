@@ -11,6 +11,13 @@ import {
   useGetDietarySuggestions as useOrvalGetDietarySuggestions,
   getGetBulkComplianceScoresQueryKey,
   getGetRecipeComplianceScoresQueryKey,
+  useComplianceFixPreview as useOrvalComplianceFixPreview,
+  useSaveComplianceVersion as useOrvalSaveComplianceVersion,
+  useDeleteRecipeVersion as useOrvalDeleteRecipeVersion,
+  useListRecipeVersions,
+  useGetRecipeVersion,
+  getListRecipeVersionsQueryKey,
+  getGetRecipeVersionQueryKey,
 } from "@workspace/api-client-react";
 
 export function useDietaryProfiles() {
@@ -58,8 +65,9 @@ export function useBulkComplianceScores() {
 }
 
 export function useRecipeComplianceScores(recipeId: number) {
-  return useGetRecipeComplianceScores(recipeId, {
+  return useGetRecipeComplianceScores(recipeId, undefined, {
     query: {
+      queryKey: getGetRecipeComplianceScoresQueryKey(recipeId),
       enabled: !isNaN(recipeId) && recipeId > 0,
     },
   });
@@ -81,4 +89,60 @@ export function useComputeComplianceScore() {
 
 export function useGetDietarySuggestions() {
   return useOrvalGetDietarySuggestions();
+}
+
+export function useComplianceFixPreview() {
+  return useOrvalComplianceFixPreview();
+}
+
+export function useSaveComplianceVersion(recipeId: number) {
+  const queryClient = useQueryClient();
+  return useOrvalSaveComplianceVersion({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListRecipeVersionsQueryKey(recipeId) });
+      },
+    },
+  });
+}
+
+export function useRecipeVersions(recipeId: number) {
+  return useListRecipeVersions(recipeId, {
+    query: {
+      queryKey: getListRecipeVersionsQueryKey(recipeId),
+      enabled: !isNaN(recipeId) && recipeId > 0,
+    },
+  });
+}
+
+export function useRecipeVersion(recipeId: number, versionId: number | null) {
+  return useGetRecipeVersion(recipeId, versionId ?? 0, {
+    query: {
+      queryKey: getGetRecipeVersionQueryKey(recipeId, versionId ?? 0),
+      enabled: !!versionId && !isNaN(recipeId) && recipeId > 0,
+    },
+  });
+}
+
+export function useRecipeComplianceScoresForVersion(recipeId: number, versionId: number | null) {
+  const enabled = !isNaN(recipeId) && recipeId > 0;
+  const params = versionId ? { versionId } : undefined;
+
+  return useGetRecipeComplianceScores(recipeId, params, {
+    query: {
+      queryKey: getGetRecipeComplianceScoresQueryKey(recipeId, params),
+      enabled,
+    },
+  });
+}
+
+export function useDeleteRecipeVersion(recipeId: number) {
+  const queryClient = useQueryClient();
+  return useOrvalDeleteRecipeVersion({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListRecipeVersionsQueryKey(recipeId) });
+      },
+    },
+  });
 }

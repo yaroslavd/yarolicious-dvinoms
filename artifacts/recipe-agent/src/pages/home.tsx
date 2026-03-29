@@ -117,6 +117,7 @@ function ChatgptImportsSection() {
 
   const { data: pending } = useListPendingRecipes({
     query: {
+      queryKey: getListPendingRecipesQueryKey(),
       refetchInterval: 30000,
     },
   });

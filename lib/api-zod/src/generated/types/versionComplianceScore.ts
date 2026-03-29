@@ -6,14 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface StoredComplianceScore {
-  id: number;
-  recipeId: number;
+export interface VersionComplianceScore {
   profileId: number;
   profileName: string;
   score: number;
-  reason: string;
-  prosList?: string[] | null;
-  consList?: string[] | null;
-  updatedAt: Date;
 }

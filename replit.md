@@ -121,16 +121,23 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 - `recipes` — saved recipes
 - `paprika_credentials` — encrypted Paprika credentials
 - `dietary_profiles` — named dietary profiles with descriptions
-- `recipe_compliance_scores` — AI-computed compliance scores (0-100) with reasons per recipe+profile pair
+- `recipe_compliance_scores` — AI-computed compliance scores (0-100) with reasons per recipe+profile pair; `versionId` is nullable (NULL = base recipe score, non-null = version-specific score)
+- `recipe_versions` — saved compliance-fix versions of recipes (label, ingredients, directions, isOriginal); each recipe has an "Original" version seeded on first use
+
+Schema changes applied via `drizzle push` (see `scripts/post-merge.sh`). The DB already has `recipe_versions` and the nullable `versionId` FK on `recipe_compliance_scores`.
 
 ### API Routes (`artifacts/api-server`)
 
 - `GET/POST /api/dietary-profiles` — list/create dietary profiles
-- `PATCH/DELETE /api/dietary-profiles/:id` — update/delete a profile
-- `GET /api/recipes/compliance-scores/bulk` — all compliance scores (for recipe cards)
-- `GET /api/recipes/:id/compliance-scores` — compliance scores for a single recipe
-- `POST /api/recipes/compliance-score` — compute/recompute a compliance score
+- `PATCH/DELETE /api/dietary-profiles/:id` — update/delete a profile (re-scores only base recipe scores, scoped with `versionId IS NULL`)
+- `GET /api/recipes/compliance-scores/bulk` — all base compliance scores (for recipe cards, filters `versionId IS NULL`)
+- `GET /api/recipes/:id/compliance-scores?versionId=` — compliance scores for a single recipe; optional `versionId` query param for version-specific scores
+- `POST /api/recipes/compliance-score` — compute/recompute a base compliance score (scoped with `versionId IS NULL`)
 - `POST /api/recipes/dietary-suggestions` — get AI dietary suggestions for a recipe+profiles
+- `POST /api/recipes/:id/compliance-fix-preview` — AI-powered ingredient swap suggestions with projected compliance scores
+- `POST /api/recipes/:id/compliance-versions` — save a compliance-fixed version of a recipe
+- `GET /api/recipes/:id/versions` — list all versions for a recipe (summary: id, label, isOriginal, createdAt)
+- `GET /api/recipes/:id/versions/:versionId` — get full version data (ingredients, directions)
 - Compliance scores are auto-computed when a recipe is saved or a profile is created/updated
 
 ## ChatGPT Recipe Import Feature

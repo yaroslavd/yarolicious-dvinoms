@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { migratePaprikaUids } from "./lib/migrate-paprika-uids";
+import { seedOriginalVersionsForExistingRecipes } from "./routes/dietary";
 
 const rawPort = process.env["PORT"];
 
@@ -30,5 +31,12 @@ app.listen(port, async (err) => {
     await migratePaprikaUids();
   } catch (migErr: any) {
     logger.warn({ err: migErr.message }, "Paprika UID migration skipped (non-fatal)");
+  }
+
+  // Seed original versions for all existing recipes that don't have one yet.
+  try {
+    await seedOriginalVersionsForExistingRecipes();
+  } catch (seedErr: any) {
+    logger.warn({ err: seedErr.message }, "Original version seeding skipped (non-fatal)");
   }
 });

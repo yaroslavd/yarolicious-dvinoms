@@ -24,12 +24,14 @@ export const recipesTable = pgTable("recipes", {
   paprikaUid: text("paprika_uid"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertRecipeSchema = createInsertSchema(recipesTable).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
 });
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;

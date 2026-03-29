@@ -8,6 +8,7 @@ import {
 export function usePaprikaCredentials() {
   return useGetPaprikaCredentials({
     query: {
+      queryKey: getGetPaprikaCredentialsQueryKey(),
       retry: false,
     }
   });

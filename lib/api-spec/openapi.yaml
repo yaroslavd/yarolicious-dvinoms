@@ -17,6 +17,8 @@ tags:
     description: AI recipe generation
   - name: dietary
     description: Dietary profiles and compliance scoring
+  - name: chatgpt
+    description: ChatGPT integration for recipe imports
 paths:
   /healthz:
     get:
@@ -130,6 +132,27 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /recipes/{id}/restore:
+    post:
+      operationId: restoreRecipe
+      tags: [recipes]
+      summary: Restore a soft-deleted recipe from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Restored
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /recipes/import-url:
     post:
@@ -276,6 +299,27 @@ paths:
         "204":
           description: Deleted
 
+  /dietary-profiles/{id}/restore:
+    post:
+      operationId: restoreDietaryProfile
+      tags: [dietary]
+      summary: Restore a soft-deleted dietary profile from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Restored
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /recipes/compliance-score:
     post:
       operationId: computeComplianceScore
@@ -304,6 +348,12 @@ paths:
         - name: id
           in: path
           required: true
+          schema:
+            type: integer
+        - name: versionId
+          in: query
+          required: false
+          description: If provided, return scores for this specific recipe version; otherwise returns base recipe scores
           schema:
             type: integer
       responses:
@@ -349,6 +399,365 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DietarySuggestionsResponse"
+
+  /recipes/{id}/compliance-fix-preview:
+    post:
+      operationId: complianceFixPreview
+      tags: [dietary]
+      summary: Preview AI-suggested swaps and projected compliance scores
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceFixPreviewRequest"
+      responses:
+        "200":
+          description: Suggested swaps and projected scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceFixPreviewResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{id}/compliance-versions:
+    post:
+      operationId: saveComplianceVersion
+      tags: [dietary]
+      summary: Save a new compliance-adapted version of a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveComplianceVersionRequest"
+      responses:
+        "201":
+          description: Created version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeVersion"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{id}/versions:
+    get:
+      operationId: listRecipeVersions
+      tags: [dietary]
+      summary: List all versions of a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecipeVersionSummary"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{id}/versions/{versionId}:
+    get:
+      operationId: getRecipeVersion
+      tags: [dietary]
+      summary: Get a specific version of a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Version detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeVersion"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRecipeVersion
+      tags: [dietary]
+      summary: Delete a specific version of a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Cannot delete original version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipes/{id}/versions/{versionId}/restore:
+    post:
+      operationId: restoreRecipeVersion
+      tags: [dietary]
+      summary: Restore a soft-deleted recipe version from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Restored
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /trash:
+    get:
+      operationId: getTrash
+      tags: [trash]
+      summary: Get all soft-deleted items
+      responses:
+        "200":
+          description: All trashed items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrashItems"
+
+  /trash/recipes/{id}:
+    delete:
+      operationId: hardDeleteRecipe
+      tags: [trash]
+      summary: Permanently delete a recipe from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Permanently deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /trash/profiles/{id}:
+    delete:
+      operationId: hardDeleteProfile
+      tags: [trash]
+      summary: Permanently delete a dietary profile from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Permanently deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /trash/versions/{id}:
+    delete:
+      operationId: hardDeleteVersion
+      tags: [trash]
+      summary: Permanently delete a recipe version from trash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Permanently deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chatgpt/import:
+    post:
+      operationId: chatgptImportRecipe
+      tags: [chatgpt]
+      summary: Import a recipe from ChatGPT (requires API key)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatgptImportBody"
+      responses:
+        "201":
+          description: Recipe queued for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatgptImportResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chatgpt/pending:
+    get:
+      operationId: listPendingRecipes
+      tags: [chatgpt]
+      summary: List pending recipes from ChatGPT imports
+      responses:
+        "200":
+          description: List of pending recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatgptPendingRecipe"
+
+  /chatgpt/pending/{id}/confirm:
+    post:
+      operationId: confirmPendingRecipe
+      tags: [chatgpt]
+      summary: Confirm and save a pending recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Recipe confirmed and saved
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chatgpt/pending/{id}:
+    delete:
+      operationId: dismissPendingRecipe
+      tags: [chatgpt]
+      summary: Dismiss and delete a pending recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Recipe dismissed
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chatgpt/api-key:
+    get:
+      operationId: getChatgptApiKey
+      tags: [chatgpt]
+      summary: Get the current API key status
+      responses:
+        "200":
+          description: API key status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatgptApiKeyStatus"
+
+  /chatgpt/api-key/regenerate:
+    post:
+      operationId: regenerateChatgptApiKey
+      tags: [chatgpt]
+      summary: Regenerate the ChatGPT integration API key
+      responses:
+        "200":
+          description: New API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatgptApiKeyRegenResult"
 
   /paprika/credentials:
     get:
@@ -833,6 +1242,16 @@ components:
           type: integer
         reason:
           type: string
+        prosList:
+          type: array
+          items:
+            type: string
+          nullable: true
+        consList:
+          type: array
+          items:
+            type: string
+          nullable: true
         updatedAt:
           type: string
           format: date-time
@@ -887,3 +1306,331 @@ components:
             $ref: "#/components/schemas/DietarySuggestion"
       required:
         - suggestions
+
+    TrashedRecipe:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
+      required: [id, name, deletedAt]
+
+    TrashedProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        deletedAt:
+          type: string
+          format: date-time
+      required: [id, name, description, deletedAt]
+
+    TrashedVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        recipeName:
+          type: string
+        label:
+          type: string
+        deletedAt:
+          type: string
+          format: date-time
+      required: [id, recipeId, recipeName, label, deletedAt]
+
+    TrashItems:
+      type: object
+      properties:
+        recipes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrashedRecipe"
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrashedProfile"
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrashedVersion"
+      required: [recipes, profiles, versions]
+
+    VersionComplianceScore:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        profileName:
+          type: string
+        score:
+          type: integer
+      required:
+        - profileId
+        - profileName
+        - score
+
+    RecipeVersionSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        label:
+          type: string
+        isOriginal:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        scores:
+          type: array
+          items:
+            $ref: "#/components/schemas/VersionComplianceScore"
+          nullable: true
+      required:
+        - id
+        - recipeId
+        - label
+        - isOriginal
+        - createdAt
+
+    RecipeVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipeId:
+          type: integer
+        label:
+          type: string
+        ingredients:
+          type: string
+        directions:
+          type: string
+        isOriginal:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - recipeId
+        - label
+        - ingredients
+        - directions
+        - isOriginal
+        - createdAt
+
+    ComplianceFixSuggestion:
+      type: object
+      properties:
+        field:
+          type: string
+        original:
+          type: string
+        suggested:
+          type: string
+        description:
+          type: string
+        profileName:
+          type: string
+        scoreBefore:
+          type: integer
+        scoreAfter:
+          type: integer
+      required:
+        - field
+        - original
+        - suggested
+        - description
+        - profileName
+        - scoreBefore
+        - scoreAfter
+
+    ComplianceFixPreviewRequest:
+      type: object
+      properties:
+        profileIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - profileIds
+
+    ComplianceFixPreviewResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceFixSuggestion"
+        projectedScores:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectedScore"
+      required:
+        - suggestions
+        - projectedScores
+
+    ProjectedScore:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        profileName:
+          type: string
+        scoreBefore:
+          type: integer
+        scoreAfter:
+          type: integer
+      required:
+        - profileId
+        - profileName
+        - scoreBefore
+        - scoreAfter
+
+    SaveComplianceVersionRequest:
+      type: object
+      properties:
+        label:
+          type: string
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceFixSuggestion"
+      required:
+        - label
+        - suggestions
+
+    ChatgptPendingRecipe:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ingredients:
+          type: string
+        directions:
+          type: string
+        servings:
+          type: ["string", "null"]
+        totalTime:
+          type: ["string", "null"]
+        prepTime:
+          type: ["string", "null"]
+        cookTime:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        nutritionalInfo:
+          type: ["string", "null"]
+        source:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        categories:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - ingredients
+        - directions
+        - status
+        - createdAt
+
+    ChatgptImportBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ingredients:
+          type: string
+        directions:
+          type: string
+        servings:
+          type: ["string", "null"]
+        totalTime:
+          type: ["string", "null"]
+        prepTime:
+          type: ["string", "null"]
+        cookTime:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        nutritionalInfo:
+          type: ["string", "null"]
+        source:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        categories:
+          type: ["string", "null"]
+        difficulty:
+          type: ["string", "null"]
+      required:
+        - name
+        - ingredients
+        - directions
+
+    ChatgptImportResult:
+      type: object
+      properties:
+        message:
+          type: string
+        id:
+          type: integer
+      required:
+        - message
+        - id
+
+    ChatgptApiKeyStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        maskedKey:
+          type: ["string", "null"]
+      required:
+        - configured
+
+    ChatgptApiKeyRegenResult:
+      type: object
+      properties:
+        apiKey:
+          type: string
+        maskedKey:
+          type: string
+      required:
+        - apiKey
+        - maskedKey

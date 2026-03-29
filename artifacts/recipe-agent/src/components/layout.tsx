@@ -6,7 +6,8 @@ import {
   Settings, 
   Menu, 
   X,
-  ChefHat
+  ChefHat,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/import", label: "Import URL", icon: DownloadCloud },
   { href: "/generate", label: "AI Generate", icon: Wand2 },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/trash", label: "Trash", icon: Trash2 },
 ];
 
 export function Layout({ children }: LayoutProps) {

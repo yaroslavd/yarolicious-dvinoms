@@ -152,6 +152,13 @@ export const DeleteRecipeParams = zod.object({
 });
 
 /**
+ * @summary Restore a soft-deleted recipe from trash
+ */
+export const RestoreRecipeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Import a recipe from a URL (supports any cooking site)
  */
 export const ImportRecipeFromUrlBody = zod.object({
@@ -265,6 +272,13 @@ export const DeleteDietaryProfileParams = zod.object({
 });
 
 /**
+ * @summary Restore a soft-deleted dietary profile from trash
+ */
+export const RestoreDietaryProfileParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Compute compliance score for a recipe against a profile
  */
 export const ComputeComplianceScoreBody = zod.object({
@@ -287,6 +301,15 @@ export const GetRecipeComplianceScoresParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const GetRecipeComplianceScoresQueryParams = zod.object({
+  versionId: zod.coerce
+    .number()
+    .optional()
+    .describe(
+      "If provided, return scores for this specific recipe version; otherwise returns base recipe scores",
+    ),
+});
+
 export const GetRecipeComplianceScoresResponseItem = zod.object({
   id: zod.number(),
   recipeId: zod.number(),
@@ -294,6 +317,8 @@ export const GetRecipeComplianceScoresResponseItem = zod.object({
   profileName: zod.string(),
   score: zod.number(),
   reason: zod.string(),
+  prosList: zod.array(zod.string()).nullish(),
+  consList: zod.array(zod.string()).nullish(),
   updatedAt: zod.date(),
 });
 export const GetRecipeComplianceScoresResponse = zod.array(
@@ -310,6 +335,8 @@ export const GetBulkComplianceScoresResponseItem = zod.object({
   profileName: zod.string(),
   score: zod.number(),
   reason: zod.string(),
+  prosList: zod.array(zod.string()).nullish(),
+  consList: zod.array(zod.string()).nullish(),
   updatedAt: zod.date(),
 });
 export const GetBulkComplianceScoresResponse = zod.array(
@@ -355,6 +382,252 @@ export const GetDietarySuggestionsResponse = zod.object({
       profileName: zod.string(),
     }),
   ),
+});
+
+/**
+ * @summary Preview AI-suggested swaps and projected compliance scores
+ */
+export const ComplianceFixPreviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ComplianceFixPreviewBody = zod.object({
+  profileIds: zod.array(zod.number()),
+});
+
+export const ComplianceFixPreviewResponse = zod.object({
+  suggestions: zod.array(
+    zod.object({
+      field: zod.string(),
+      original: zod.string(),
+      suggested: zod.string(),
+      description: zod.string(),
+      profileName: zod.string(),
+      scoreBefore: zod.number(),
+      scoreAfter: zod.number(),
+    }),
+  ),
+  projectedScores: zod.array(
+    zod.object({
+      profileId: zod.number(),
+      profileName: zod.string(),
+      scoreBefore: zod.number(),
+      scoreAfter: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Save a new compliance-adapted version of a recipe
+ */
+export const SaveComplianceVersionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SaveComplianceVersionBody = zod.object({
+  label: zod.string(),
+  suggestions: zod.array(
+    zod.object({
+      field: zod.string(),
+      original: zod.string(),
+      suggested: zod.string(),
+      description: zod.string(),
+      profileName: zod.string(),
+      scoreBefore: zod.number(),
+      scoreAfter: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List all versions of a recipe
+ */
+export const ListRecipeVersionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListRecipeVersionsResponseItem = zod.object({
+  id: zod.number(),
+  recipeId: zod.number(),
+  label: zod.string(),
+  isOriginal: zod.boolean(),
+  createdAt: zod.date(),
+  scores: zod
+    .array(
+      zod.object({
+        profileId: zod.number(),
+        profileName: zod.string(),
+        score: zod.number(),
+      }),
+    )
+    .nullish(),
+});
+export const ListRecipeVersionsResponse = zod.array(
+  ListRecipeVersionsResponseItem,
+);
+
+/**
+ * @summary Get a specific version of a recipe
+ */
+export const GetRecipeVersionParams = zod.object({
+  id: zod.coerce.number(),
+  versionId: zod.coerce.number(),
+});
+
+export const GetRecipeVersionResponse = zod.object({
+  id: zod.number(),
+  recipeId: zod.number(),
+  label: zod.string(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  isOriginal: zod.boolean(),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Delete a specific version of a recipe
+ */
+export const DeleteRecipeVersionParams = zod.object({
+  id: zod.coerce.number(),
+  versionId: zod.coerce.number(),
+});
+
+/**
+ * @summary Restore a soft-deleted recipe version from trash
+ */
+export const RestoreRecipeVersionParams = zod.object({
+  id: zod.coerce.number(),
+  versionId: zod.coerce.number(),
+});
+
+/**
+ * @summary Get all soft-deleted items
+ */
+export const GetTrashResponse = zod.object({
+  recipes: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      description: zod.string().nullish(),
+      deletedAt: zod.date(),
+    }),
+  ),
+  profiles: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      description: zod.string(),
+      deletedAt: zod.date(),
+    }),
+  ),
+  versions: zod.array(
+    zod.object({
+      id: zod.number(),
+      recipeId: zod.number(),
+      recipeName: zod.string(),
+      label: zod.string(),
+      deletedAt: zod.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Permanently delete a recipe from trash
+ */
+export const HardDeleteRecipeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Permanently delete a dietary profile from trash
+ */
+export const HardDeleteProfileParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Permanently delete a recipe version from trash
+ */
+export const HardDeleteVersionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Import a recipe from ChatGPT (requires API key)
+ */
+export const ChatgptImportRecipeBody = zod.object({
+  name: zod.string(),
+  description: zod.string().nullish(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  servings: zod.string().nullish(),
+  totalTime: zod.string().nullish(),
+  prepTime: zod.string().nullish(),
+  cookTime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  nutritionalInfo: zod.string().nullish(),
+  source: zod.string().nullish(),
+  sourceUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  categories: zod.string().nullish(),
+  difficulty: zod.string().nullish(),
+});
+
+/**
+ * @summary List pending recipes from ChatGPT imports
+ */
+export const ListPendingRecipesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  ingredients: zod.string(),
+  directions: zod.string(),
+  servings: zod.string().nullish(),
+  totalTime: zod.string().nullish(),
+  prepTime: zod.string().nullish(),
+  cookTime: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  nutritionalInfo: zod.string().nullish(),
+  source: zod.string().nullish(),
+  sourceUrl: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  categories: zod.string().nullish(),
+  difficulty: zod.string().nullish(),
+  status: zod.string(),
+  createdAt: zod.date(),
+});
+export const ListPendingRecipesResponse = zod.array(
+  ListPendingRecipesResponseItem,
+);
+
+/**
+ * @summary Confirm and save a pending recipe
+ */
+export const ConfirmPendingRecipeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Dismiss and delete a pending recipe
+ */
+export const DismissPendingRecipeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get the current API key status
+ */
+export const GetChatgptApiKeyResponse = zod.object({
+  configured: zod.boolean(),
+  maskedKey: zod.string().nullish(),
+});
+
+/**
+ * @summary Regenerate the ChatGPT integration API key
+ */
+export const RegenerateChatgptApiKeyResponse = zod.object({
+  apiKey: zod.string(),
+  maskedKey: zod.string(),
 });
 
 /**
@@ -429,6 +702,7 @@ export const CategorizationApplyResponse = zod.object({
 
 /**
  * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
+
  * @summary Import all recipes from the user's Paprika account into the local database
  */
 export const ImportFromPaprikaResponse = zod.object({
@@ -444,67 +718,4 @@ export const ImportFromPaprikaResponse = zod.object({
   errors: zod
     .array(zod.string())
     .describe("Per-recipe error messages for any failures during import"),
-});
-
-/**
- * @summary Import a recipe from ChatGPT (Bearer token auth)
- */
-export const ChatgptImportBody = zod.object({
-  name: zod.string(),
-  description: zod.string().nullish(),
-  ingredients: zod.string(),
-  directions: zod.string(),
-  servings: zod.string().nullish(),
-  totalTime: zod.string().nullish(),
-  prepTime: zod.string().nullish(),
-  cookTime: zod.string().nullish(),
-  notes: zod.string().nullish(),
-  nutritionalInfo: zod.string().nullish(),
-  source: zod.string().nullish(),
-  sourceUrl: zod.string().nullish(),
-  imageUrl: zod.string().nullish(),
-  categories: zod.string().nullish(),
-  difficulty: zod.string().nullish(),
-});
-
-export const ChatgptImportResponse = zod.object({
-  message: zod.string(),
-  id: zod.number(),
-});
-
-export const ChatgptPendingRecipe = zod.object({
-  id: zod.number(),
-  name: zod.string(),
-  description: zod.string().nullish(),
-  ingredients: zod.string(),
-  directions: zod.string(),
-  servings: zod.string().nullish(),
-  totalTime: zod.string().nullish(),
-  prepTime: zod.string().nullish(),
-  cookTime: zod.string().nullish(),
-  notes: zod.string().nullish(),
-  nutritionalInfo: zod.string().nullish(),
-  source: zod.string().nullish(),
-  sourceUrl: zod.string().nullish(),
-  imageUrl: zod.string().nullish(),
-  categories: zod.string().nullish(),
-  difficulty: zod.string().nullish(),
-  status: zod.string(),
-  createdAt: zod.date(),
-});
-
-export const ListPendingRecipesResponse = zod.array(ChatgptPendingRecipe);
-
-export const ChatgptPendingRecipeParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const GetApiKeyResponse = zod.object({
-  configured: zod.boolean(),
-  maskedKey: zod.string().nullish(),
-});
-
-export const RegenerateApiKeyResponse = zod.object({
-  apiKey: zod.string(),
-  maskedKey: zod.string(),
 });

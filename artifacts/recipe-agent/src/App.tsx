@@ -10,6 +10,7 @@ import ImportRecipe from "@/pages/import-recipe";
 import GenerateRecipe from "@/pages/generate-recipe";
 import RecipeDetail from "@/pages/recipe-detail";
 import Settings from "@/pages/settings";
+import TrashPage from "@/pages/trash";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/generate" component={GenerateRecipe} />
         <Route path="/recipe/:id" component={RecipeDetail} />
         <Route path="/settings" component={Settings} />
+        <Route path="/trash" component={TrashPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
