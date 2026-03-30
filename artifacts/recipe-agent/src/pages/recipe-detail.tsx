@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetTrashQueryKey, useAddCartItems, getListCartItemsQueryKey } from "@workspace/api-client-react";
 import { useRoute, useLocation } from "wouter";
-import { useRecipe, useUpdateRecipe, useDeleteRecipe, useExportToPaprika } from "@/hooks/use-recipes";
+import { useRecipe, useUpdateRecipe, useDeleteRecipe } from "@/hooks/use-recipes";
 import {
   useRecipeComplianceScores,
   useRecipeVersions,
@@ -13,20 +13,17 @@ import {
   useDeleteRecipeVersion,
   useDietaryProfiles,
 } from "@/hooks/use-dietary";
-import { usePaprikaCredentials } from "@/hooks/use-paprika";
 import { RecipeForm } from "@/components/recipe-form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   Clock,
   Users,
-  ArrowUpRight,
   Edit3,
   Trash2,
   ChevronLeft,
   Loader2,
   ExternalLink,
-  Download,
   Sparkles,
   Salad,
   Wrench,
@@ -483,7 +480,6 @@ export default function RecipeDetail() {
   }, []);
 
   const { data: recipe, isLoading, isError } = useRecipe(id);
-  const { data: paprikaCreds } = usePaprikaCredentials();
   const { data: baseComplianceScores } = useRecipeComplianceScoresForVersion(id, null);
   const { data: complianceScores, isLoading: complianceLoading, isFetching: complianceFetching } = useRecipeComplianceScoresForVersion(
     id,
@@ -496,7 +492,6 @@ export default function RecipeDetail() {
   const queryClient = useQueryClient();
   const updateMutation = useUpdateRecipe();
   const deleteMutation = useDeleteRecipe();
-  const exportMutation = useExportToPaprika();
   const deleteVersionMutation = useDeleteRecipeVersion(id);
   const addCartItems = useAddCartItems({
     mutation: {
@@ -571,36 +566,6 @@ export default function RecipeDetail() {
       setLocation("/");
     } catch (err: any) {
       toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const handleExport = async () => {
-    if (!paprikaCreds?.configured) {
-      toast({
-        title: "Paprika not configured",
-        description: "Please set your credentials in Settings first.",
-        action: <Button variant="outline" size="sm" onClick={() => setLocation("/settings")}>Settings</Button>
-      });
-      return;
-    }
-
-    const isResync = recipe.exportedToPaprika;
-    try {
-      const res = await exportMutation.mutateAsync({ id });
-      if (res.success) {
-        toast({
-          title: isResync ? "Re-synced to Paprika!" : "Exported to Paprika!",
-          description: res.message
-        });
-      } else {
-        toast({
-          title: "Sync failed",
-          description: res.message,
-          variant: "destructive"
-        });
-      }
-    } catch (err: any) {
-      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
     }
   };
 
@@ -713,40 +678,6 @@ export default function RecipeDetail() {
               )}
             </div>
 
-            {/* Export Card */}
-            <div className="shrink-0 bg-background/80 backdrop-blur-sm border border-border p-4 rounded-2xl shadow-sm min-w-[200px] space-y-2">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-foreground">Send to Paprika</span>
-                {recipe.exportedToPaprika ? (
-                  <span className="w-2 h-2 rounded-full bg-secondary" title="Synced" />
-                ) : (
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground/30" title="Not Synced" />
-                )}
-              </div>
-              <Button
-                onClick={handleExport}
-                disabled={exportMutation.isPending}
-                className="w-full bg-[#EA5B4E] hover:bg-[#D44E42] text-white shadow-md shadow-[#EA5B4E]/20"
-              >
-                {exportMutation.isPending
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <ArrowUpRight className="w-4 h-4 mr-2" />}
-                {recipe.exportedToPaprika ? "Re-sync to Paprika" : "Sync to Paprika"}
-              </Button>
-              <a
-                href={`${import.meta.env.BASE_URL}api/recipes/${id}/paprika-file`}
-                download
-                className="w-full"
-              >
-                <Button variant="outline" className="w-full" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download File
-                </Button>
-              </a>
-              <p className="text-[10px] text-muted-foreground text-center leading-snug">
-                Open the .paprikarecipe file on any device to import
-              </p>
-            </div>
           </div>
 
           {/* Meta Grid */}

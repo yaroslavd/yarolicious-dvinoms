@@ -133,12 +133,7 @@ export function Layout({ children }: LayoutProps) {
           })}
         </nav>
         
-        <div className="p-6 mt-auto space-y-3">
-          <div className="bg-accent/50 rounded-2xl p-4 text-center">
-            <p className="text-xs text-muted-foreground font-medium">Synced with</p>
-            <p className="text-sm font-serif font-bold text-foreground mt-1">Paprika App</p>
-          </div>
-        </div>
+        <div className="p-6 mt-auto" />
       </div>
 
       {/* Main Content */}

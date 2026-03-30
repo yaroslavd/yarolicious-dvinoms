@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Clock, Users, ArrowUpRight, Loader2, ShoppingCart } from "lucide-react";
+import { Clock, Users, Loader2, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Recipe, StoredComplianceScore } from "@workspace/api-client-react";
 import {
@@ -100,13 +100,6 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
                   </div>
                 )}
                 
-                {/* Paprika Badge */}
-                {recipe.exportedToPaprika && (
-                  <div className="absolute top-3 right-3 bg-secondary/90 backdrop-blur text-secondary-foreground text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
-                    <ArrowUpRight className="w-3 h-3" />
-                    Paprika
-                  </div>
-                )}
               </div>
 
               {/* Content */}
