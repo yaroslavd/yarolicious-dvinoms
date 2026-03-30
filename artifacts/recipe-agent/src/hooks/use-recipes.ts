@@ -20,7 +20,7 @@ export function useRecipe(id: number) {
     query: {
       queryKey: getGetRecipeQueryKey(id),
       enabled: !isNaN(id) && id > 0,
-    }
+    },
   });
 }
 
@@ -41,7 +41,9 @@ export function useUpdateRecipe() {
     mutation: {
       onSuccess: (data, variables) => {
         queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetRecipeQueryKey(variables.id) });
+        queryClient.invalidateQueries({
+          queryKey: getGetRecipeQueryKey(variables.id),
+        });
       },
     },
   });

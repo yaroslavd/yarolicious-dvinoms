@@ -11,7 +11,9 @@ export const dietaryProfilesTable = pgTable("dietary_profiles", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const insertDietaryProfileSchema = createInsertSchema(dietaryProfilesTable).omit({
+export const insertDietaryProfileSchema = createInsertSchema(
+  dietaryProfilesTable,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

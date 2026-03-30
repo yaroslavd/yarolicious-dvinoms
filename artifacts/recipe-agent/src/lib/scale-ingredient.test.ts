@@ -28,7 +28,9 @@ describe("scaleIngredient", () => {
     });
 
     it("scales a decimal quantity", () => {
-      expect(scaleIngredient("1.5 cups buttermilk", 2)).toBe("3 cups buttermilk");
+      expect(scaleIngredient("1.5 cups buttermilk", 2)).toBe(
+        "3 cups buttermilk",
+      );
     });
 
     it("scales a unicode fraction quantity (½)", () => {
@@ -50,7 +52,9 @@ describe("scaleIngredient", () => {
     });
 
     it("preserves multi-word ingredient names", () => {
-      expect(scaleIngredient("2 cups all-purpose flour", 2)).toBe("4 cups all-purpose flour");
+      expect(scaleIngredient("2 cups all-purpose flour", 2)).toBe(
+        "4 cups all-purpose flour",
+      );
     });
 
     it("rounds measured results to 2 decimal places", () => {
@@ -60,7 +64,9 @@ describe("scaleIngredient", () => {
 
   describe("alternate quantity+unit expressions (dual-unit formats)", () => {
     it("strips slash alternate and scales primary: '8 ounces/227 grams blanched almonds' ×2", () => {
-      expect(scaleIngredient("8 ounces/227 grams blanched almonds", 2)).toBe("16 ounces blanched almonds");
+      expect(scaleIngredient("8 ounces/227 grams blanched almonds", 2)).toBe(
+        "16 ounces blanched almonds",
+      );
     });
 
     it("strips slash alternate without space: '1 cup/240ml milk' ×2", () => {
@@ -68,15 +74,21 @@ describe("scaleIngredient", () => {
     });
 
     it("strips slash alternate metric-first: '200g/7oz dark chocolate' ×2", () => {
-      expect(scaleIngredient("200g/7oz dark chocolate", 2)).toBe("400 g dark chocolate");
+      expect(scaleIngredient("200g/7oz dark chocolate", 2)).toBe(
+        "400 g dark chocolate",
+      );
     });
 
     it("strips 'or' alternate: '2 tablespoons or 30ml olive oil' ×3", () => {
-      expect(scaleIngredient("2 tablespoons or 30ml olive oil", 3)).toBe("6 tablespoons olive oil");
+      expect(scaleIngredient("2 tablespoons or 30ml olive oil", 3)).toBe(
+        "6 tablespoons olive oil",
+      );
     });
 
     it("strips parenthetical alternate: '8 oz (227g) blanched almonds' ×2", () => {
-      expect(scaleIngredient("8 oz (227g) blanched almonds", 2)).toBe("16 oz blanched almonds");
+      expect(scaleIngredient("8 oz (227g) blanched almonds", 2)).toBe(
+        "16 oz blanched almonds",
+      );
     });
 
     it("strips parenthetical alternate with space: '1 cup (240 ml) cream' ×2", () => {
@@ -89,13 +101,17 @@ describe("scaleIngredient", () => {
     });
 
     it("does not strip when slash is not followed by qty+unit: '1 cup flour/sugar mix' ×2", () => {
-      expect(scaleIngredient("1 cup flour/sugar mix", 2)).toBe("2 cup flour/sugar mix");
+      expect(scaleIngredient("1 cup flour/sugar mix", 2)).toBe(
+        "2 cup flour/sugar mix",
+      );
     });
   });
 
   describe("purpose qualifier stripping", () => {
     it("strips ', for dusting' when scaling a measured ingredient", () => {
-      expect(scaleIngredient("1 tbsp butter, for greasing", 2)).toBe("2 tbsp butter");
+      expect(scaleIngredient("1 tbsp butter, for greasing", 2)).toBe(
+        "2 tbsp butter",
+      );
     });
 
     it("strips ', to taste' when scaling a measured ingredient", () => {
@@ -107,33 +123,47 @@ describe("scaleIngredient", () => {
     });
 
     it("returns raw string unchanged for no-quantity ingredient with purpose qualifier", () => {
-      expect(scaleIngredient("Confectioners' sugar, for dusting", 2)).toBe("Confectioners' sugar, for dusting");
+      expect(scaleIngredient("Confectioners' sugar, for dusting", 2)).toBe(
+        "Confectioners' sugar, for dusting",
+      );
     });
 
     it("does not strip purpose when no comma precedes it", () => {
-      expect(scaleIngredient("2 cups sauce for pasta", 2)).toBe("4 cups sauce for pasta");
+      expect(scaleIngredient("2 cups sauce for pasta", 2)).toBe(
+        "4 cups sauce for pasta",
+      );
     });
   });
 
   describe("preparation-state qualifier stripping", () => {
     it("strips ', peeled' when scaling", () => {
-      expect(scaleIngredient("3 russet potatoes, peeled", 2)).toBe("6 russet potatoes");
+      expect(scaleIngredient("3 russet potatoes, peeled", 2)).toBe(
+        "6 russet potatoes",
+      );
     });
 
     it("strips ', softened' when scaling", () => {
-      expect(scaleIngredient("2 tbsp butter, softened", 2)).toBe("4 tbsp butter");
+      expect(scaleIngredient("2 tbsp butter, softened", 2)).toBe(
+        "4 tbsp butter",
+      );
     });
 
     it("strips ', melted' when scaling", () => {
-      expect(scaleIngredient("100g dark chocolate, melted", 1.5)).toBe("150 g dark chocolate");
+      expect(scaleIngredient("100g dark chocolate, melted", 1.5)).toBe(
+        "150 g dark chocolate",
+      );
     });
 
     it("strips ', separated' when scaling", () => {
-      expect(scaleIngredient("4 large eggs, separated", 0.5)).toBe("2 large eggs");
+      expect(scaleIngredient("4 large eggs, separated", 0.5)).toBe(
+        "2 large eggs",
+      );
     });
 
     it("strips ', finely chopped' (adverb + prep word) when scaling", () => {
-      expect(scaleIngredient("2 cloves garlic, finely chopped", 2)).toBe("4 cloves garlic");
+      expect(scaleIngredient("2 cloves garlic, finely chopped", 2)).toBe(
+        "4 cloves garlic",
+      );
     });
 
     it("strips ', sifted' when scaling", () => {
@@ -141,7 +171,9 @@ describe("scaleIngredient", () => {
     });
 
     it("does not strip prep word when no comma precedes it", () => {
-      expect(scaleIngredient("4 oz blanched almonds", 2)).toBe("8 oz blanched almonds");
+      expect(scaleIngredient("4 oz blanched almonds", 2)).toBe(
+        "8 oz blanched almonds",
+      );
     });
   });
 
@@ -151,7 +183,9 @@ describe("scaleIngredient", () => {
     });
 
     it("recognizes multi-word unit 'fl oz'", () => {
-      expect(scaleIngredient("4 fl oz lemon juice", 2)).toBe("8 fl oz lemon juice");
+      expect(scaleIngredient("4 fl oz lemon juice", 2)).toBe(
+        "8 fl oz lemon juice",
+      );
     });
 
     it("strips 'of' between unit and name", () => {

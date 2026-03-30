@@ -28,7 +28,7 @@ export function DietarySuggestionsPanel({
   };
 
   const activeCount = suggestions.filter(
-    (_, i) => !dismissed.has(i) && !accepted.has(i)
+    (_, i) => !dismissed.has(i) && !accepted.has(i),
   ).length;
 
   return (
@@ -79,10 +79,16 @@ export function DietarySuggestionsPanel({
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground line-through">{s.original}</p>
-                      <p className="text-sm font-medium text-foreground">→ {s.suggested}</p>
+                      <p className="text-sm text-muted-foreground line-through">
+                        {s.original}
+                      </p>
+                      <p className="text-sm font-medium text-foreground">
+                        → {s.suggested}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1.5">{s.reason}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      {s.reason}
+                    </p>
                   </div>
 
                   {!isAccepted && (
@@ -111,7 +117,9 @@ export function DietarySuggestionsPanel({
                   )}
 
                   {isAccepted && (
-                    <span className="text-xs text-emerald-600 font-semibold shrink-0">Applied</span>
+                    <span className="text-xs text-emerald-600 font-semibold shrink-0">
+                      Applied
+                    </span>
                   )}
                 </div>
               </div>

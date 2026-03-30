@@ -24,7 +24,9 @@ export default defineConfig({
         // Use the Replit-provided Chromium when available (avoids needing
         // `playwright install` which downloads a separate browser binary).
         ...(process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE
-          ? { executablePath: process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE }
+          ? {
+              executablePath: process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE,
+            }
           : {}),
       },
     },

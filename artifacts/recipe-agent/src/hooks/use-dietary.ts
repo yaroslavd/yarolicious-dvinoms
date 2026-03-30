@@ -29,8 +29,12 @@ export function useCreateDietaryProfile() {
   return useOrvalCreateDietaryProfile({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListDietaryProfilesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetBulkComplianceScoresQueryKey() });
+        queryClient.invalidateQueries({
+          queryKey: getListDietaryProfilesQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetBulkComplianceScoresQueryKey(),
+        });
       },
     },
   });
@@ -41,8 +45,12 @@ export function useUpdateDietaryProfile() {
   return useOrvalUpdateDietaryProfile({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListDietaryProfilesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetBulkComplianceScoresQueryKey() });
+        queryClient.invalidateQueries({
+          queryKey: getListDietaryProfilesQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetBulkComplianceScoresQueryKey(),
+        });
       },
     },
   });
@@ -53,8 +61,12 @@ export function useDeleteDietaryProfile() {
   return useOrvalDeleteDietaryProfile({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListDietaryProfilesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetBulkComplianceScoresQueryKey() });
+        queryClient.invalidateQueries({
+          queryKey: getListDietaryProfilesQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetBulkComplianceScoresQueryKey(),
+        });
       },
     },
   });
@@ -78,9 +90,13 @@ export function useComputeComplianceScore() {
   return useOrvalComputeComplianceScore({
     mutation: {
       onSuccess: (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: getGetBulkComplianceScoresQueryKey() });
         queryClient.invalidateQueries({
-          queryKey: getGetRecipeComplianceScoresQueryKey(variables.data.recipeId),
+          queryKey: getGetBulkComplianceScoresQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetRecipeComplianceScoresQueryKey(
+            variables.data.recipeId,
+          ),
         });
       },
     },
@@ -100,7 +116,9 @@ export function useSaveComplianceVersion(recipeId: number) {
   return useOrvalSaveComplianceVersion({
     mutation: {
       onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: getListRecipeVersionsQueryKey(recipeId) });
+        queryClient.invalidateQueries({
+          queryKey: getListRecipeVersionsQueryKey(recipeId),
+        });
         if (data?.id) {
           const params = { versionId: data.id };
           queryClient.invalidateQueries({
@@ -130,7 +148,10 @@ export function useRecipeVersion(recipeId: number, versionId: number | null) {
   });
 }
 
-export function useRecipeComplianceScoresForVersion(recipeId: number, versionId: number | null) {
+export function useRecipeComplianceScoresForVersion(
+  recipeId: number,
+  versionId: number | null,
+) {
   const enabled = !isNaN(recipeId) && recipeId > 0;
   const params = versionId ? { versionId } : undefined;
 
@@ -140,7 +161,10 @@ export function useRecipeComplianceScoresForVersion(recipeId: number, versionId:
       enabled,
       refetchInterval: (query) => {
         const data = query.state.data;
-        if (versionId && (!data || (Array.isArray(data) && data.length === 0))) {
+        if (
+          versionId &&
+          (!data || (Array.isArray(data) && data.length === 0))
+        ) {
           return 3000;
         }
         return false;
@@ -154,7 +178,9 @@ export function useDeleteRecipeVersion(recipeId: number) {
   return useOrvalDeleteRecipeVersion({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListRecipeVersionsQueryKey(recipeId) });
+        queryClient.invalidateQueries({
+          queryKey: getListRecipeVersionsQueryKey(recipeId),
+        });
       },
     },
   });

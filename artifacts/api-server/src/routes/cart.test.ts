@@ -236,7 +236,9 @@ describe("Shopping Cart API", () => {
         .send({ ingredients: ["2 bananas"], sourceRecipe: "Banana Bread" })
         .expect(201);
 
-      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const valuesCall = (
+        vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(valuesCall.sourceRecipe).toBe("Banana Bread");
     });
 
@@ -260,7 +262,9 @@ describe("Shopping Cart API", () => {
         .send({ ingredients: ["2 bananas"] })
         .expect(201);
 
-      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const valuesCall = (
+        vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(valuesCall.sourceRecipe).toBeNull();
     });
 
@@ -275,7 +279,11 @@ describe("Shopping Cart API", () => {
 
       vi.mocked(db.insert).mockReturnValue({
         values: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([{ ...BANANA_ITEM, name: "salt", quantity: "0", unit: "" }]),
+          returning: vi
+            .fn()
+            .mockResolvedValue([
+              { ...BANANA_ITEM, name: "salt", quantity: "0", unit: "" },
+            ]),
         }),
       } as any);
 
@@ -284,7 +292,9 @@ describe("Shopping Cart API", () => {
         .send({ ingredients: ["salt, to taste"] })
         .expect(201);
 
-      const valuesCall = (vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const valuesCall = (
+        vi.mocked(db.insert)().values as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
       expect(valuesCall.name).toBe("salt");
       expect(valuesCall.quantity).toBe("0");
       expect(valuesCall.unit).toBe("");
@@ -329,7 +339,9 @@ describe("Shopping Cart API", () => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ ...BANANA_ITEM, quantity: "5" }]),
+            returning: vi
+              .fn()
+              .mockResolvedValue([{ ...BANANA_ITEM, quantity: "5" }]),
           }),
         }),
       } as any);
@@ -356,7 +368,11 @@ describe("Shopping Cart API", () => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ ...chickenOz, quantity: "1.5", unit: "lb" }]),
+            returning: vi
+              .fn()
+              .mockResolvedValue([
+                { ...chickenOz, quantity: "1.5", unit: "lb" },
+              ]),
           }),
         }),
       } as any);
@@ -380,7 +396,11 @@ describe("Shopping Cart API", () => {
         from: vi.fn().mockResolvedValue([bananaWithSource]),
       } as any);
 
-      const updatedBanana = { ...bananaWithSource, quantity: "5", sourceRecipe: "Apple Pie, Banana Bread" }; // already alpha
+      const updatedBanana = {
+        ...bananaWithSource,
+        quantity: "5",
+        sourceRecipe: "Apple Pie, Banana Bread",
+      }; // already alpha
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
@@ -397,7 +417,8 @@ describe("Shopping Cart API", () => {
       expect(db.update).toHaveBeenCalledOnce();
       expect(db.insert).not.toHaveBeenCalled();
       // The set call should include the merged sourceRecipe
-      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>)
+        .mock.calls[0][0];
       expect(setCall.sourceRecipe).toBe("Apple Pie, Banana Bread");
     });
 
@@ -405,7 +426,10 @@ describe("Shopping Cart API", () => {
       const { default: supertest } = await import("supertest");
 
       // Banana already in cart from "Zucchini Bread" — incoming "Apple Pie" should sort first
-      const bananaWithSource = { ...BANANA_ITEM, sourceRecipe: "Zucchini Bread" };
+      const bananaWithSource = {
+        ...BANANA_ITEM,
+        sourceRecipe: "Zucchini Bread",
+      };
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockResolvedValue([bananaWithSource]),
       } as any);
@@ -413,7 +437,13 @@ describe("Shopping Cart API", () => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ ...bananaWithSource, quantity: "5", sourceRecipe: "Apple Pie, Zucchini Bread" }]),
+            returning: vi.fn().mockResolvedValue([
+              {
+                ...bananaWithSource,
+                quantity: "5",
+                sourceRecipe: "Apple Pie, Zucchini Bread",
+              },
+            ]),
           }),
         }),
       } as any);
@@ -423,7 +453,8 @@ describe("Shopping Cart API", () => {
         .send({ ingredients: ["3 bananas"], sourceRecipe: "Apple Pie" })
         .expect(201);
 
-      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>)
+        .mock.calls[0][0];
       expect(setCall.sourceRecipe).toBe("Apple Pie, Zucchini Bread");
     });
 
@@ -439,7 +470,9 @@ describe("Shopping Cart API", () => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ ...bananaWithSource, quantity: "5" }]),
+            returning: vi
+              .fn()
+              .mockResolvedValue([{ ...bananaWithSource, quantity: "5" }]),
           }),
         }),
       } as any);
@@ -449,7 +482,8 @@ describe("Shopping Cart API", () => {
         .send({ ingredients: ["3 bananas"], sourceRecipe: "Apple Pie" })
         .expect(201);
 
-      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const setCall = (vi.mocked(db.update)().set as ReturnType<typeof vi.fn>)
+        .mock.calls[0][0];
       // Should still just be "Apple Pie", not "Apple Pie, Apple Pie"
       expect(setCall.sourceRecipe).toBe("Apple Pie");
     });
@@ -640,7 +674,9 @@ describe("Shopping Cart API", () => {
       vi.mocked(db.update).mockReturnValue({
         set: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            returning: vi.fn().mockResolvedValue([{ ...checkedItem, checked: false }]),
+            returning: vi
+              .fn()
+              .mockResolvedValue([{ ...checkedItem, checked: false }]),
           }),
         }),
       } as any);

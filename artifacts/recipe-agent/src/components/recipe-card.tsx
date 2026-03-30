@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Clock, Users, Loader2, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
-import type { Recipe, StoredComplianceScore } from "@workspace/api-client-react";
+import type {
+  Recipe,
+  StoredComplianceScore,
+} from "@workspace/api-client-react";
 import {
   useAddCartItems,
   getListCartItemsQueryKey,
@@ -27,15 +30,24 @@ function getScoreColor(score: number): string {
 }
 
 function getScoreBg(score: number): string {
-  if (score >= 80) return "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300";
-  if (score >= 60) return "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300";
-  if (score >= 40) return "bg-orange-50 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300";
+  if (score >= 80)
+    return "bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300";
+  if (score >= 60)
+    return "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300";
+  if (score >= 40)
+    return "bg-orange-50 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300";
   return "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300";
 }
 
-export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoading }: RecipeCardProps) {
+export function RecipeCard({
+  recipe,
+  index = 0,
+  complianceScores,
+  complianceLoading,
+}: RecipeCardProps) {
   const hasImage = !!recipe.imageUrl && recipe.imageUrl.length > 5;
-  const recipeScores = complianceScores?.filter((s) => s.recipeId === recipe.id) ?? [];
+  const recipeScores =
+    complianceScores?.filter((s) => s.recipeId === recipe.id) ?? [];
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -61,7 +73,9 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
       .map((l) => l.trim())
       .filter(Boolean);
     const scaled = lines.map((l) => scaleIngredient(l, scaleFactor));
-    addItems.mutate({ data: { ingredients: scaled, sourceRecipe: recipe.name } });
+    addItems.mutate({
+      data: { ingredients: scaled, sourceRecipe: recipe.name },
+    });
     setDialogOpen(false);
   };
 
@@ -81,25 +95,23 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
             style={{ gridArea: "stack" }}
           >
             <div className="h-full flex flex-col bg-card rounded-2xl border border-border shadow-sm group-hover:shadow-xl group-hover:border-primary/30 transition-all duration-300 overflow-hidden">
-              
               {/* Image Header */}
               <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                 {hasImage ? (
-                  <img 
-                    src={recipe.imageUrl!} 
+                  <img
+                    src={recipe.imageUrl!}
                     alt={recipe.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
                   <div className="w-full h-full bg-accent/30 flex items-center justify-center p-6">
-                     <img 
-                        src={`${import.meta.env.BASE_URL}images/empty-plate.png`} 
-                        alt="Placeholder"
-                        className="w-24 h-24 opacity-40 group-hover:scale-110 transition-transform duration-500"
-                     />
+                    <img
+                      src={`${import.meta.env.BASE_URL}images/empty-plate.png`}
+                      alt="Placeholder"
+                      className="w-24 h-24 opacity-40 group-hover:scale-110 transition-transform duration-500"
+                    />
                   </div>
                 )}
-                
               </div>
 
               {/* Content */}
@@ -107,7 +119,7 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
                 <h3 className="font-serif font-bold text-lg text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                   {recipe.name}
                 </h3>
-                
+
                 {recipe.description && (
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">
                     {recipe.description}
@@ -118,7 +130,9 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
                 {complianceLoading ? (
                   <div className="mt-3 flex items-center gap-1.5">
                     <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/50" />
-                    <span className="text-xs text-muted-foreground/50">Computing scores…</span>
+                    <span className="text-xs text-muted-foreground/50">
+                      Computing scores…
+                    </span>
                   </div>
                 ) : recipeScores.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1.5">
@@ -128,7 +142,9 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getScoreBg(score.score)}`}
                         title={`${score.profileName}: ${score.reason}`}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${getScoreColor(score.score)} shrink-0`} />
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${getScoreColor(score.score)} shrink-0`}
+                        />
                         {score.profileName} {score.score}%
                       </span>
                     ))}
@@ -150,7 +166,6 @@ export function RecipeCard({ recipe, index = 0, complianceScores, complianceLoad
                   )}
                 </div>
               </div>
-
             </div>
           </Link>
 

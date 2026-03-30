@@ -2,7 +2,19 @@ import { useState } from "react";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useBulkComplianceScores } from "@/hooks/use-dietary";
 import { RecipeCard } from "@/components/recipe-card";
-import { Loader2, ChefHat, Plus, Bot, ChevronDown, ChevronUp, Clock, Users, Check, X, ImageIcon } from "lucide-react";
+import {
+  Loader2,
+  ChefHat,
+  Plus,
+  Bot,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Users,
+  Check,
+  X,
+  ImageIcon,
+} from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +30,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { ChatgptPendingRecipe } from "@workspace/api-client-react";
 
-function PendingRecipeCard({ recipe, onConfirm, onDismiss, isLoading }: {
+function PendingRecipeCard({
+  recipe,
+  onConfirm,
+  onDismiss,
+  isLoading,
+}: {
   recipe: ChatgptPendingRecipe;
   onConfirm: () => void;
   onDismiss: () => void;
@@ -39,28 +56,38 @@ function PendingRecipeCard({ recipe, onConfirm, onDismiss, isLoading }: {
       )}
       <div className="p-5 space-y-3">
         <div>
-          <h3 className="font-serif font-bold text-lg text-foreground leading-tight">{recipe.name}</h3>
+          <h3 className="font-serif font-bold text-lg text-foreground leading-tight">
+            {recipe.name}
+          </h3>
           {recipe.description && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recipe.description}</p>
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {recipe.description}
+            </p>
           )}
         </div>
 
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           {recipe.totalTime && (
             <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />{recipe.totalTime}
+              <Clock className="w-3.5 h-3.5" />
+              {recipe.totalTime}
             </span>
           )}
           {recipe.servings && (
             <span className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />{recipe.servings}
+              <Users className="w-3.5 h-3.5" />
+              {recipe.servings}
             </span>
           )}
           {recipe.difficulty && (
-            <Badge variant="secondary" className="text-xs">{recipe.difficulty}</Badge>
+            <Badge variant="secondary" className="text-xs">
+              {recipe.difficulty}
+            </Badge>
           )}
           {recipe.categories && (
-            <Badge variant="outline" className="text-xs">{recipe.categories}</Badge>
+            <Badge variant="outline" className="text-xs">
+              {recipe.categories}
+            </Badge>
           )}
         </div>
 
@@ -73,12 +100,20 @@ function PendingRecipeCard({ recipe, onConfirm, onDismiss, isLoading }: {
             </summary>
             <div className="mt-3 space-y-3 text-sm">
               <div>
-                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">Ingredients</p>
-                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">{recipe.ingredients}</p>
+                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Ingredients
+                </p>
+                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">
+                  {recipe.ingredients}
+                </p>
               </div>
               <div>
-                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">Directions</p>
-                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">{recipe.directions}</p>
+                <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                  Directions
+                </p>
+                <p className="text-foreground/80 whitespace-pre-wrap text-xs leading-relaxed">
+                  {recipe.directions}
+                </p>
               </div>
             </div>
           </details>
@@ -91,7 +126,11 @@ function PendingRecipeCard({ recipe, onConfirm, onDismiss, isLoading }: {
             size="sm"
             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-9 shadow-sm"
           >
-            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1.5" />}
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Check className="w-3.5 h-3.5 mr-1.5" />
+            )}
             Add to Collection
           </Button>
           <Button
@@ -132,13 +171,26 @@ function ChatgptImportsSection() {
     setProcessingIds((prev) => new Set(prev).add(id));
     try {
       await confirmMutation.mutateAsync({ id });
-      queryClient.invalidateQueries({ queryKey: getListPendingRecipesQueryKey() });
+      queryClient.invalidateQueries({
+        queryKey: getListPendingRecipesQueryKey(),
+      });
       queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() });
-      toast({ title: "Added to collection!", description: `"${name}" is now in your recipes.` });
+      toast({
+        title: "Added to collection!",
+        description: `"${name}" is now in your recipes.`,
+      });
     } catch (err: any) {
-      toast({ title: "Failed to add recipe", description: err.message ?? "Something went wrong.", variant: "destructive" });
+      toast({
+        title: "Failed to add recipe",
+        description: err.message ?? "Something went wrong.",
+        variant: "destructive",
+      });
     } finally {
-      setProcessingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      setProcessingIds((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
     }
   };
 
@@ -146,12 +198,25 @@ function ChatgptImportsSection() {
     setProcessingIds((prev) => new Set(prev).add(id));
     try {
       await dismissMutation.mutateAsync({ id });
-      queryClient.invalidateQueries({ queryKey: getListPendingRecipesQueryKey() });
-      toast({ title: "Dismissed", description: `"${name}" was removed from imports.` });
+      queryClient.invalidateQueries({
+        queryKey: getListPendingRecipesQueryKey(),
+      });
+      toast({
+        title: "Dismissed",
+        description: `"${name}" was removed from imports.`,
+      });
     } catch (err: any) {
-      toast({ title: "Failed to dismiss", description: err.message ?? "Something went wrong.", variant: "destructive" });
+      toast({
+        title: "Failed to dismiss",
+        description: err.message ?? "Something went wrong.",
+        variant: "destructive",
+      });
     } finally {
-      setProcessingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      setProcessingIds((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
     }
   };
 
@@ -167,15 +232,23 @@ function ChatgptImportsSection() {
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-lg text-foreground">ChatGPT Imports</span>
-              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs px-2 py-0.5">{count}</Badge>
+              <span className="font-serif font-bold text-lg text-foreground">
+                ChatGPT Imports
+              </span>
+              <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs px-2 py-0.5">
+                {count}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
               {count} recipe{count !== 1 ? "s" : ""} waiting for review
             </p>
           </div>
         </div>
-        {isOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+        )}
       </button>
 
       <AnimatePresence>
@@ -207,13 +280,16 @@ function ChatgptImportsSection() {
 
 export default function Home() {
   const { data: recipes, isLoading, isError } = useRecipes();
-  const { data: complianceScores, isLoading: complianceLoading } = useBulkComplianceScores();
+  const { data: complianceScores, isLoading: complianceLoading } =
+    useBulkComplianceScores();
 
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] text-primary/60">
         <Loader2 className="w-12 h-12 animate-spin mb-4" />
-        <p className="font-serif text-lg animate-pulse">Warming up the oven...</p>
+        <p className="font-serif text-lg animate-pulse">
+          Warming up the oven...
+        </p>
       </div>
     );
   }
@@ -225,7 +301,9 @@ export default function Home() {
           <ChefHat className="w-10 h-10" />
         </div>
         <h2 className="text-xl font-bold">Oops, something burnt.</h2>
-        <p className="text-muted-foreground mt-2">Failed to load your recipes.</p>
+        <p className="text-muted-foreground mt-2">
+          Failed to load your recipes.
+        </p>
       </div>
     );
   }
@@ -240,16 +318,23 @@ export default function Home() {
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground">My Recipes</h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground">
+            My Recipes
+          </h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            {hasRecipes ? `You have ${recipes.length} recipe${recipes.length === 1 ? '' : 's'} saved.` : "Your cookbook is empty."}
+            {hasRecipes
+              ? `You have ${recipes.length} recipe${recipes.length === 1 ? "" : "s"} saved.`
+              : "Your cookbook is empty."}
           </p>
         </div>
 
         {hasRecipes && (
           <div className="flex gap-3">
             <Link href="/import">
-              <Button variant="outline" className="rounded-xl shadow-sm bg-card hover:bg-accent">
+              <Button
+                variant="outline"
+                className="rounded-xl shadow-sm bg-card hover:bg-accent"
+              >
                 Import URL
               </Button>
             </Link>
@@ -276,18 +361,28 @@ export default function Home() {
             alt="Empty plate"
             className="w-48 h-48 mx-auto opacity-80 mb-8 mix-blend-multiply"
           />
-          <h2 className="text-2xl font-serif font-bold text-foreground mb-4">Start your collection</h2>
+          <h2 className="text-2xl font-serif font-bold text-foreground mb-4">
+            Start your collection
+          </h2>
           <p className="text-muted-foreground text-lg mb-8 text-balance">
-            Import a recipe from your favorite food blog, or ask our AI chef to create something completely new based on what you're craving.
+            Import a recipe from your favorite food blog, or ask our AI chef to
+            create something completely new based on what you're craving.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/import" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full rounded-xl shadow-lg shadow-primary/20 text-md h-12">
+              <Button
+                size="lg"
+                className="w-full rounded-xl shadow-lg shadow-primary/20 text-md h-12"
+              >
                 Import from URL
               </Button>
             </Link>
             <Link href="/generate" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full rounded-xl bg-accent/30 border-accent h-12 text-md hover:bg-accent/50">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full rounded-xl bg-accent/30 border-accent h-12 text-md hover:bg-accent/50"
+              >
                 Generate with AI
               </Button>
             </Link>

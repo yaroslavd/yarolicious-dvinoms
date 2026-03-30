@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Wand2, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import type { RecipeInput, DietarySuggestion } from "@workspace/api-client-react";
+import type {
+  RecipeInput,
+  DietarySuggestion,
+} from "@workspace/api-client-react";
 import { useDietaryProfiles } from "@/hooks/use-dietary";
 
 export default function GenerateRecipe() {
@@ -23,7 +26,7 @@ export default function GenerateRecipe() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
   const generateMutation = useGenerateRecipe();
   const createMutation = useCreateRecipe();
   const getSuggestionsMutation = useGetDietarySuggestions();
@@ -32,15 +35,19 @@ export default function GenerateRecipe() {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description) return;
-    
+
     try {
-      const data = await generateMutation.mutateAsync({ 
-        data: { 
+      const data = await generateMutation.mutateAsync({
+        data: {
           description,
-          preferences: preferences || null
-        } 
+          preferences: preferences || null,
+        },
       });
-      setGeneratedData({ ...data, originType: 'ai_generated', generationPrompt: description });
+      setGeneratedData({
+        ...data,
+        originType: "ai_generated",
+        generationPrompt: description,
+      });
       setSuggestions([]);
 
       if (selectedProfileIds.length > 0 && profiles) {
@@ -101,13 +108,19 @@ export default function GenerateRecipe() {
 
   if (generatedData) {
     return (
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
             Your Custom Recipe
           </h1>
-          <p className="text-muted-foreground mt-2">Tweak the ingredients or instructions, then save it.</p>
+          <p className="text-muted-foreground mt-2">
+            Tweak the ingredients or instructions, then save it.
+          </p>
         </div>
 
         {suggestionsLoading ? (
@@ -119,34 +132,52 @@ export default function GenerateRecipe() {
           <DietarySuggestionsPanel suggestions={suggestions} />
         ) : null}
 
-        <RecipeForm 
-          initialData={generatedData} 
-          onSubmit={handleSave} 
+        <RecipeForm
+          initialData={generatedData}
+          onSubmit={handleSave}
           isSubmitting={createMutation.isPending}
-          onCancel={() => { setGeneratedData(null); setSuggestions([]); }}
+          onCancel={() => {
+            setGeneratedData(null);
+            setSuggestions([]);
+          }}
         />
       </motion.div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto pt-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-2xl mx-auto pt-8"
+    >
       <div className="text-center space-y-4 mb-8">
         <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Wand2 className="w-8 h-8" />
         </div>
-        <h1 className="text-4xl font-serif font-bold text-foreground">AI Chef</h1>
+        <h1 className="text-4xl font-serif font-bold text-foreground">
+          AI Chef
+        </h1>
         <p className="text-lg text-muted-foreground text-balance">
-          Describe what you're craving or what ingredients you have in the fridge. Our AI will craft a perfect recipe for you.
+          Describe what you're craving or what ingredients you have in the
+          fridge. Our AI will craft a perfect recipe for you.
         </p>
       </div>
 
-      <form onSubmit={handleGenerate} className="bg-card p-6 md:p-8 rounded-3xl shadow-lg border border-border/50 space-y-6 relative overflow-hidden">
+      <form
+        onSubmit={handleGenerate}
+        className="bg-card p-6 md:p-8 rounded-3xl shadow-lg border border-border/50 space-y-6 relative overflow-hidden"
+      >
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secondary/40 via-secondary to-secondary/40" />
-        
+
         <div className="space-y-3">
-          <label htmlFor="description" className="text-sm font-medium text-foreground ml-1">What do you want to make?</label>
-          <Textarea 
+          <label
+            htmlFor="description"
+            className="text-sm font-medium text-foreground ml-1"
+          >
+            What do you want to make?
+          </label>
+          <Textarea
             id="description"
             required
             placeholder="A spicy vegetarian Thai pasta using zucchini and bell peppers..."
@@ -157,8 +188,13 @@ export default function GenerateRecipe() {
         </div>
 
         <div className="space-y-3">
-          <label htmlFor="preferences" className="text-sm font-medium text-foreground ml-1">Dietary Preferences or Exclusions (Optional)</label>
-          <Input 
+          <label
+            htmlFor="preferences"
+            className="text-sm font-medium text-foreground ml-1"
+          >
+            Dietary Preferences or Exclusions (Optional)
+          </label>
+          <Input
             id="preferences"
             placeholder="Gluten-free, no dairy, under 30 minutes..."
             value={preferences}
@@ -167,11 +203,14 @@ export default function GenerateRecipe() {
           />
         </div>
 
-        <ProfileSelector selected={selectedProfileIds} onChange={setSelectedProfileIds} />
+        <ProfileSelector
+          selected={selectedProfileIds}
+          onChange={setSelectedProfileIds}
+        />
 
-        <Button 
-          type="submit" 
-          size="lg" 
+        <Button
+          type="submit"
+          size="lg"
           disabled={generateMutation.isPending || !description}
           className="w-full h-14 text-lg rounded-xl shadow-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-secondary/25 hover:shadow-xl hover:shadow-secondary/30 transition-all"
         >

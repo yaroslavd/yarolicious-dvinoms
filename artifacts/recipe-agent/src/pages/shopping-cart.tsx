@@ -1,5 +1,14 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { ShoppingCart as CartIcon, Trash2, Check, Plus, X, ChevronUp, ChevronDown, BookOpen } from "lucide-react";
+import {
+  ShoppingCart as CartIcon,
+  Trash2,
+  Check,
+  Plus,
+  X,
+  ChevronUp,
+  ChevronDown,
+  BookOpen,
+} from "lucide-react";
 import {
   useListCartItems,
   useAddCartItems,
@@ -21,12 +30,20 @@ import { motion, AnimatePresence } from "framer-motion";
 // ---------------------------------------------------------------------------
 
 const VOLUME_TO_ML: Record<string, number> = {
-  tsp: 4.92892, tbsp: 14.7868, "fl oz": 29.5735, cup: 236.588,
-  pint: 473.176, quart: 946.353, gallon: 3785.41,
+  tsp: 4.92892,
+  tbsp: 14.7868,
+  "fl oz": 29.5735,
+  cup: 236.588,
+  pint: 473.176,
+  quart: 946.353,
+  gallon: 3785.41,
 };
 
 const WEIGHT_TO_G: Record<string, number> = {
-  oz: 28.3495, lb: 453.592, g: 1, kg: 1000,
+  oz: 28.3495,
+  lb: 453.592,
+  g: 1,
+  kg: 1000,
 };
 
 function convertUnits(qty: number, from: string, to: string): number | null {
@@ -45,17 +62,17 @@ function convertUnits(qty: number, from: string, to: string): number | null {
  * Only 2–3 options, focused on common US usage.
  */
 const UNIT_NEIGHBORS: Record<string, string[]> = {
-  tsp:    ["tsp", "tbsp"],
-  tbsp:   ["tsp", "tbsp", "cup"],
-  "fl oz":["fl oz", "cup"],
-  cup:    ["fl oz", "cup", "quart"],
-  pint:   ["cup", "pint", "quart"],
-  quart:  ["cup", "quart", "gallon"],
+  tsp: ["tsp", "tbsp"],
+  tbsp: ["tsp", "tbsp", "cup"],
+  "fl oz": ["fl oz", "cup"],
+  cup: ["fl oz", "cup", "quart"],
+  pint: ["cup", "pint", "quart"],
+  quart: ["cup", "quart", "gallon"],
   gallon: ["quart", "gallon"],
-  oz:     ["oz", "lb"],
-  lb:     ["oz", "lb"],
-  g:      ["g", "kg"],
-  kg:     ["g", "kg"],
+  oz: ["oz", "lb"],
+  lb: ["oz", "lb"],
+  g: ["g", "kg"],
+  kg: ["g", "kg"],
 };
 
 // ---------------------------------------------------------------------------
@@ -63,8 +80,15 @@ const UNIT_NEIGHBORS: Record<string, string[]> = {
 // ---------------------------------------------------------------------------
 
 const FRACTION_SYMBOLS: [number, string][] = [
-  [1 / 8,  "⅛"], [1 / 4, "¼"], [1 / 3, "⅓"], [3 / 8, "⅜"],
-  [1 / 2,  "½"], [5 / 8, "⅝"], [2 / 3, "⅔"], [3 / 4, "¾"], [7 / 8, "⅞"],
+  [1 / 8, "⅛"],
+  [1 / 4, "¼"],
+  [1 / 3, "⅓"],
+  [3 / 8, "⅜"],
+  [1 / 2, "½"],
+  [5 / 8, "⅝"],
+  [2 / 3, "⅔"],
+  [3 / 4, "¾"],
+  [7 / 8, "⅞"],
 ];
 
 function formatQty(qty: number): string {
@@ -89,16 +113,31 @@ function formatQty(qty: number): string {
 // ---------------------------------------------------------------------------
 
 const AISLE_ORDER = [
-  "Produce", "Dairy", "Meat & Seafood", "Bakery", "Frozen",
-  "Canned Goods", "Condiments & Sauces", "Spices & Seasonings",
-  "Dry Goods & Pasta", "Beverages", "Other",
+  "Produce",
+  "Dairy",
+  "Meat & Seafood",
+  "Bakery",
+  "Frozen",
+  "Canned Goods",
+  "Condiments & Sauces",
+  "Spices & Seasonings",
+  "Dry Goods & Pasta",
+  "Beverages",
+  "Other",
 ];
 
 const AISLE_ICONS: Record<string, string> = {
-  Produce: "🥦", Dairy: "🥛", "Meat & Seafood": "🥩", Bakery: "🍞",
-  Frozen: "🧊", "Canned Goods": "🥫", "Condiments & Sauces": "🫙",
-  "Spices & Seasonings": "🌶️", "Dry Goods & Pasta": "🌾",
-  Beverages: "🥤", Other: "🛒",
+  Produce: "🥦",
+  Dairy: "🥛",
+  "Meat & Seafood": "🥩",
+  Bakery: "🍞",
+  Frozen: "🧊",
+  "Canned Goods": "🥫",
+  "Condiments & Sauces": "🫙",
+  "Spices & Seasonings": "🌶️",
+  "Dry Goods & Pasta": "🌾",
+  Beverages: "🥤",
+  Other: "🛒",
 };
 
 // ---------------------------------------------------------------------------
@@ -150,7 +189,7 @@ function CartItemRow({
       const clamped = Math.max(minQty, parseFloat(qty.toFixed(4)));
       onUpdate(item.id, clamped, unit);
     },
-    [item.id, onUpdate]
+    [item.id, onUpdate],
   );
 
   const handleIncrease = () => {
@@ -176,7 +215,8 @@ function CartItemRow({
   };
 
   const startEditing = () => {
-    const display = localUnit && localQty < 10 ? localQty.toFixed(1) : formatQty(localQty);
+    const display =
+      localUnit && localQty < 10 ? localQty.toFixed(1) : formatQty(localQty);
     setEditDraft(display);
     setIsEditingQty(true);
   };
@@ -259,8 +299,12 @@ function CartItemRow({
                 onChange={(e) => setEditDraft(e.target.value)}
                 onBlur={commitDraft}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.currentTarget.blur(); }
-                  if (e.key === "Escape") { setIsEditingQty(false); }
+                  if (e.key === "Enter") {
+                    e.currentTarget.blur();
+                  }
+                  if (e.key === "Escape") {
+                    setIsEditingQty(false);
+                  }
                 }}
                 autoFocus
                 onFocus={(e) => e.currentTarget.select()}
@@ -271,7 +315,9 @@ function CartItemRow({
                 onClick={startEditing}
                 className="text-sm font-semibold tabular-nums min-w-[1.5rem] text-center leading-none py-0.5 cursor-text hover:text-primary transition-colors"
               >
-                {localUnit && localQty < 10 ? localQty.toFixed(1) : formatQty(localQty)}
+                {localUnit && localQty < 10
+                  ? localQty.toFixed(1)
+                  : formatQty(localQty)}
               </span>
             )}
             <button
@@ -295,7 +341,9 @@ function CartItemRow({
                   {altUnits.map((u, i) => (
                     <span key={u} className="flex items-center gap-1">
                       {i > 0 && (
-                        <span className="text-[9px] text-muted-foreground/40">·</span>
+                        <span className="text-[9px] text-muted-foreground/40">
+                          ·
+                        </span>
                       )}
                       <button
                         onClick={() => handleUnitSwitch(u)}
@@ -317,7 +365,9 @@ function CartItemRow({
       <div className="flex-1 min-w-0 flex flex-col">
         <span
           className={`text-sm truncate ${
-            item.checked ? "line-through text-muted-foreground" : "text-foreground"
+            item.checked
+              ? "line-through text-muted-foreground"
+              : "text-foreground"
           }`}
         >
           {item.name}
@@ -358,19 +408,26 @@ export default function ShoppingCartPage() {
   const [inputValue, setInputValue] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [showSource, setShowSource] = useState(() => {
-    try { return localStorage.getItem("cart-show-source") !== "false"; } catch { return true; }
+    try {
+      return localStorage.getItem("cart-show-source") !== "false";
+    } catch {
+      return true;
+    }
   });
 
   const toggleShowSource = () => {
     setShowSource((prev) => {
       const next = !prev;
-      try { localStorage.setItem("cart-show-source", String(next)); } catch {}
+      try {
+        localStorage.setItem("cart-show-source", String(next));
+      } catch {}
       return next;
     });
   };
 
   const { data: items = [], isLoading } = useListCartItems({
     query: {
+      queryKey: getListCartItemsQueryKey(),
       // Poll every 2.5 s while any item is still waiting for its thumbnail,
       // then stop automatically once all thumbnails have arrived.
       refetchInterval: (query) => {
@@ -444,7 +501,7 @@ export default function ShoppingCartPage() {
     (id: number, quantity: number, unit: string) => {
       updateItem.mutate({ id, data: { quantity, unit } });
     },
-    [updateItem]
+    [updateItem],
   );
 
   const grouped = useMemo(() => {

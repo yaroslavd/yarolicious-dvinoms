@@ -1,14 +1,14 @@
 /**
  * Voice chat client utilities for Replit AI Integrations.
- * 
+ *
  * Usage:
  * 1. Copy audio-playback-worklet.js to your public/ folder
  * 2. Pass the deployed worklet URL into the hooks
- * 
+ *
  * Example:
  * ```tsx
  * import { useVoiceRecorder, useVoiceStream } from "./audio";
- * 
+ *
  * function VoiceChat({ workletPath }: { workletPath: string }) {
  *   const [transcript, setTranscript] = useState("");
  *   const recorder = useVoiceRecorder();
@@ -17,7 +17,7 @@
  *     onTranscript: (_, full) => setTranscript(full),
  *     onComplete: (text) => console.log("Done:", text),
  *   });
- * 
+ *
  *   const handleClick = async () => {
  *     if (recorder.state === "recording") {
  *       const blob = await recorder.stopRecording();
@@ -26,7 +26,7 @@
  *       await recorder.startRecording();
  *     }
  *   };
- * 
+ *
  *   return (
  *     <div>
  *       <button onClick={handleClick}>
@@ -39,7 +39,10 @@
  * ```
  */
 
-export { decodePCM16ToFloat32, createAudioPlaybackContext } from "./audio-utils";
+export {
+  decodePCM16ToFloat32,
+  createAudioPlaybackContext,
+} from "./audio-utils";
 export { useVoiceRecorder, type RecordingState } from "./useVoiceRecorder";
 export { useAudioPlayback, type PlaybackState } from "./useAudioPlayback";
 export { useVoiceStream } from "./useVoiceStream";

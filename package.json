@@ -8,8 +8,8 @@
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "test": "pnpm -r --if-present run test",
-    "test:e2e": "node ./setup-playwright.mjs && LD_LIBRARY_PATH=\"/nix/store/24w3s75aa2lrvvxsybficn8y3zxd27kp-mesa-libgbm-25.1.0/lib:$LD_LIBRARY_PATH\" playwright test",
-    "test:e2e:prod": "node ./setup-playwright.mjs && LD_LIBRARY_PATH=\"/nix/store/24w3s75aa2lrvvxsybficn8y3zxd27kp-mesa-libgbm-25.1.0/lib:$LD_LIBRARY_PATH\" PLAYWRIGHT_BASE_URL=\"${PRODUCTION_URL:?Set PRODUCTION_URL to your deployed app URL}\" playwright test"
+    "test:e2e": "node ./setup-playwright.mjs && playwright test",
+    "test:e2e:prod": "node ./setup-playwright.mjs && PLAYWRIGHT_BASE_URL=\"${PRODUCTION_URL:?Set PRODUCTION_URL to your deployed app URL}\" playwright test"
   },
   "private": true,
   "devDependencies": {

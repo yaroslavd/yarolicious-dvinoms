@@ -1,8 +1,19 @@
 const UNICODE_FRACTIONS: Record<string, number> = {
-  "½": 0.5, "⅓": 1 / 3, "⅔": 2 / 3, "¼": 0.25, "¾": 0.75,
-  "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
-  "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8,
-  "⅙": 1 / 6, "⅚": 5 / 6,
+  "½": 0.5,
+  "⅓": 1 / 3,
+  "⅔": 2 / 3,
+  "¼": 0.25,
+  "¾": 0.75,
+  "⅛": 0.125,
+  "⅜": 0.375,
+  "⅝": 0.625,
+  "⅞": 0.875,
+  "⅕": 0.2,
+  "⅖": 0.4,
+  "⅗": 0.6,
+  "⅘": 0.8,
+  "⅙": 1 / 6,
+  "⅚": 5 / 6,
 };
 
 function parseFraction(s: string): number | null {
@@ -13,7 +24,9 @@ function parseFraction(s: string): number | null {
   }
   const unicodeMixed = s.match(/^(\d+)\s*([½⅓⅔¼¾⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])$/);
   if (unicodeMixed) {
-    return parseInt(unicodeMixed[1], 10) + (UNICODE_FRACTIONS[unicodeMixed[2]] ?? 0);
+    return (
+      parseInt(unicodeMixed[1], 10) + (UNICODE_FRACTIONS[unicodeMixed[2]] ?? 0)
+    );
   }
   const slashFrac = s.match(/^(\d+)\s*\/\s*(\d+)$/);
   if (slashFrac) {
@@ -32,19 +45,32 @@ function parseFraction(s: string): number | null {
 }
 
 const UNITS = [
-  "teaspoons?", "tsps?",
-  "tablespoons?", "tbsps?", "tbs",
+  "teaspoons?",
+  "tsps?",
+  "tablespoons?",
+  "tbsps?",
+  "tbs",
   "cups?",
-  "fluid ounces?", "fl\\.?\\s*oz\\.?",
-  "ounces?", "oz\\.?",
-  "pounds?", "lbs?\\.?",
-  "grams?", "g",
-  "kilograms?", "kg",
-  "milliliters?", "ml",
-  "liters?", "l",
-  "pints?", "pts?\\.?",
-  "quarts?", "qts?\\.?",
-  "gallons?", "gal",
+  "fluid ounces?",
+  "fl\\.?\\s*oz\\.?",
+  "ounces?",
+  "oz\\.?",
+  "pounds?",
+  "lbs?\\.?",
+  "grams?",
+  "g",
+  "kilograms?",
+  "kg",
+  "milliliters?",
+  "ml",
+  "liters?",
+  "l",
+  "pints?",
+  "pts?\\.?",
+  "quarts?",
+  "qts?\\.?",
+  "gallons?",
+  "gal",
   "pieces?",
   "slices?",
   "cloves?",
@@ -53,9 +79,11 @@ const UNITS = [
   "heads?",
   "cans?",
   "jars?",
-  "packages?", "pkgs?\\.?",
+  "packages?",
+  "pkgs?\\.?",
   "sprigs?",
-  "leaves?", "leaf",
+  "leaves?",
+  "leaf",
   "strips?",
   "sheets?",
   "pinch(?:es)?",
@@ -82,7 +110,7 @@ const unicodeFracChars = Object.keys(UNICODE_FRACTIONS).join("");
 const NUM_PATTERN = `(?:\\d+\\s+\\d+\\s*/\\s*\\d+|\\d+\\s*/\\s*\\d+|\\d+(?:\\.\\d+)?|[${unicodeFracChars}]|\\d+\\s*[${unicodeFracChars}])`;
 const QUANTITY_REGEX = new RegExp(
   `^(${NUM_PATTERN})(?:\\s*[-–]\\s*(${NUM_PATTERN}))?\\s*`,
-  "u"
+  "u",
 );
 
 function parseQuantity(raw: string): { qty: number; rest: string } | null {
@@ -141,7 +169,8 @@ function parseLine(raw: string): ParsedLine | null {
       const altUMatch = altTrimmed.match(UNIT_REGEX);
       if (altUMatch) {
         afterUnit = altTrimmed.slice(altUMatch[0].length).trim();
-        if (inParens && afterUnit.startsWith(")")) afterUnit = afterUnit.slice(1).trim();
+        if (inParens && afterUnit.startsWith(")"))
+          afterUnit = afterUnit.slice(1).trim();
       }
     }
   }
@@ -166,15 +195,15 @@ export function scaleIngredient(raw: string, scaleFactor: number): string {
   const scaled = baseQty * scaleFactor;
 
   const hasUnit = unit !== "";
-  const finalQty = hasUnit
-    ? parseFloat(scaled.toFixed(2))
-    : Math.ceil(scaled);
+  const finalQty = hasUnit ? parseFloat(scaled.toFixed(2)) : Math.ceil(scaled);
 
   const parts = [String(finalQty), unit, name].filter(Boolean);
   return parts.join(" ");
 }
 
-export function parseServingsCount(servingsStr: string | null | undefined): number {
+export function parseServingsCount(
+  servingsStr: string | null | undefined,
+): number {
   if (!servingsStr) return 1;
   const match = servingsStr.match(/(\d+(?:\.\d+)?)/);
   if (!match) return 1;

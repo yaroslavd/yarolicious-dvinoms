@@ -56,13 +56,16 @@ export function AddToCartDialog({
             Add to Cart
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Choose how many servings to make and add scaled ingredients to your shopping cart.
+            Choose how many servings to make and add scaled ingredients to your
+            shopping cart.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-2 space-y-4">
           <p className="text-sm text-muted-foreground">
-            Adding ingredients from <span className="font-medium text-foreground">{recipeName}</span> to your shopping cart.
+            Adding ingredients from{" "}
+            <span className="font-medium text-foreground">{recipeName}</span> to
+            your shopping cart.
           </p>
 
           <div className="space-y-2">
@@ -91,7 +94,11 @@ export function AddToCartDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={!isValid || isPending}>

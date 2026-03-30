@@ -47,7 +47,10 @@ router.get("/trash", async (_req, res): Promise<void> => {
         deletedAt: recipeVersionsTable.deletedAt,
       })
       .from(recipeVersionsTable)
-      .innerJoin(recipesTable, eq(recipeVersionsTable.recipeId, recipesTable.id))
+      .innerJoin(
+        recipesTable,
+        eq(recipeVersionsTable.recipeId, recipesTable.id),
+      )
       .where(isNotNull(recipeVersionsTable.deletedAt))
       .orderBy(recipeVersionsTable.deletedAt),
   ]);
@@ -57,40 +60,58 @@ router.get("/trash", async (_req, res): Promise<void> => {
 
 router.delete("/trash/recipes/:id", async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
-  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!id) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   const [deleted] = await db
     .delete(recipesTable)
     .where(eq(recipesTable.id, id))
     .returning();
 
-  if (!deleted) { res.status(404).json({ error: "Recipe not found" }); return; }
+  if (!deleted) {
+    res.status(404).json({ error: "Recipe not found" });
+    return;
+  }
   res.sendStatus(204);
 });
 
 router.delete("/trash/profiles/:id", async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
-  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!id) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   const [deleted] = await db
     .delete(dietaryProfilesTable)
     .where(eq(dietaryProfilesTable.id, id))
     .returning();
 
-  if (!deleted) { res.status(404).json({ error: "Profile not found" }); return; }
+  if (!deleted) {
+    res.status(404).json({ error: "Profile not found" });
+    return;
+  }
   res.sendStatus(204);
 });
 
 router.delete("/trash/versions/:id", async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
-  if (!id) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!id) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   const [deleted] = await db
     .delete(recipeVersionsTable)
     .where(eq(recipeVersionsTable.id, id))
     .returning();
 
-  if (!deleted) { res.status(404).json({ error: "Version not found" }); return; }
+  if (!deleted) {
+    res.status(404).json({ error: "Version not found" });
+    return;
+  }
   res.sendStatus(204);
 });
 

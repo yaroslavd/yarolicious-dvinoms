@@ -29,7 +29,10 @@ app.listen(port, async (err) => {
   try {
     await seedOriginalVersionsForExistingRecipes();
   } catch (seedErr: any) {
-    logger.warn({ err: seedErr.message }, "Original version seeding skipped (non-fatal)");
+    logger.warn(
+      { err: seedErr.message },
+      "Original version seeding skipped (non-fatal)",
+    );
   }
 
   // Fire-and-forget: regenerate thumbnails for any cart items missing them.

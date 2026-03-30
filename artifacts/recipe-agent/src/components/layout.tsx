@@ -1,10 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { 
-  BookOpen, 
-  DownloadCloud, 
-  Wand2, 
-  Settings, 
-  Menu, 
+import {
+  BookOpen,
+  DownloadCloud,
+  Wand2,
+  Settings,
+  Menu,
   X,
   ChefHat,
   Trash2,
@@ -13,7 +13,10 @@ import {
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
-import { useListCartItems } from "@workspace/api-client-react";
+import {
+  useListCartItems,
+  getListCartItemsQueryKey,
+} from "@workspace/api-client-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,13 +32,18 @@ const navItems = [
 
 function CartIconButton() {
   const { data: items = [] } = useListCartItems({
-    query: { staleTime: 1000 * 30 },
+    query: { queryKey: getListCartItemsQueryKey(), staleTime: 1000 * 30 },
   });
   const count = items.length;
 
   return (
     <Link href="/cart">
-      <Button variant="ghost" size="icon" className="relative" aria-label="Shopping cart">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative"
+        aria-label="Shopping cart"
+      >
         <ShoppingCart className="w-5 h-5" />
         {count > 0 && (
           <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 leading-none">
@@ -61,8 +69,16 @@ export function Layout({ children }: LayoutProps) {
         </Link>
         <div className="flex items-center gap-1">
           <CartIconButton />
-          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </Button>
         </div>
       </div>
@@ -86,9 +102,11 @@ export function Layout({ children }: LayoutProps) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`
                       flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-                      ${isActive 
-                        ? "bg-primary/10 text-primary font-medium" 
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"}
+                      ${
+                        isActive
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }
                     `}
                   >
                     <item.icon className="w-5 h-5" />
@@ -104,14 +122,19 @@ export function Layout({ children }: LayoutProps) {
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-72 bg-card border-r border-border shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div className="p-6">
-          <Link href="/" className="flex items-center gap-3 text-primary group cursor-pointer">
+          <Link
+            href="/"
+            className="flex items-center gap-3 text-primary group cursor-pointer"
+          >
             <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
               <ChefHat className="w-6 h-6" />
             </div>
-            <span className="font-serif font-bold text-xl tracking-tight">Culinary Agent</span>
+            <span className="font-serif font-bold text-xl tracking-tight">
+              Culinary Agent
+            </span>
           </Link>
         </div>
-        
+
         <nav className="flex-1 px-4 space-y-2">
           {navItems.map((item) => {
             const isActive = location === item.href;
@@ -121,18 +144,22 @@ export function Layout({ children }: LayoutProps) {
                 href={item.href}
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
-                  ${isActive 
-                    ? "bg-primary/10 text-primary shadow-sm shadow-primary/5 font-medium" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"}
+                  ${
+                    isActive
+                      ? "bg-primary/10 text-primary shadow-sm shadow-primary/5 font-medium"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }
                 `}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}`} />
+                <item.icon
+                  className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}`}
+                />
                 {item.label}
               </Link>
             );
           })}
         </nav>
-        
+
         <div className="p-6 mt-auto" />
       </div>
 

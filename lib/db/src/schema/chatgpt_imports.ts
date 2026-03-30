@@ -23,14 +23,19 @@ export const chatgptPendingRecipesTable = pgTable("chatgpt_pending_recipes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertChatgptPendingRecipeSchema = createInsertSchema(chatgptPendingRecipesTable).omit({
+export const insertChatgptPendingRecipeSchema = createInsertSchema(
+  chatgptPendingRecipesTable,
+).omit({
   id: true,
   createdAt: true,
   status: true,
 });
 
-export type InsertChatgptPendingRecipe = z.infer<typeof insertChatgptPendingRecipeSchema>;
-export type ChatgptPendingRecipe = typeof chatgptPendingRecipesTable.$inferSelect;
+export type InsertChatgptPendingRecipe = z.infer<
+  typeof insertChatgptPendingRecipeSchema
+>;
+export type ChatgptPendingRecipe =
+  typeof chatgptPendingRecipesTable.$inferSelect;
 
 export const apiKeysTable = pgTable("api_keys", {
   id: serial("id").primaryKey(),

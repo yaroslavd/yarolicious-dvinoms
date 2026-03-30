@@ -13,22 +13,61 @@
 // ---------------------------------------------------------------------------
 
 const VOLUME_ALIASES: Record<string, string> = {
-  teaspoon: "tsp", teaspoons: "tsp", tsp: "tsp", t: "tsp",
-  tablespoon: "tbsp", tablespoons: "tbsp", tbsp: "tbsp", tbs: "tbsp", tb: "tbsp",
-  "fluid ounce": "fl oz", "fluid ounces": "fl oz", "fl oz": "fl oz", "fl. oz": "fl oz", "fl. oz.": "fl oz", "floz": "fl oz",
-  cup: "cup", cups: "cup", c: "cup",
-  pint: "pint", pints: "pint", pt: "pint", pts: "pint",
-  quart: "quart", quarts: "quart", qt: "quart", qts: "quart",
-  gallon: "gallon", gallons: "gallon", gal: "gallon",
-  milliliter: "ml", milliliters: "ml", ml: "ml", millilitre: "ml", millilitres: "ml",
-  liter: "l", liters: "l", litre: "l", litres: "l", l: "l",
+  teaspoon: "tsp",
+  teaspoons: "tsp",
+  tsp: "tsp",
+  t: "tsp",
+  tablespoon: "tbsp",
+  tablespoons: "tbsp",
+  tbsp: "tbsp",
+  tbs: "tbsp",
+  tb: "tbsp",
+  "fluid ounce": "fl oz",
+  "fluid ounces": "fl oz",
+  "fl oz": "fl oz",
+  "fl. oz": "fl oz",
+  "fl. oz.": "fl oz",
+  floz: "fl oz",
+  cup: "cup",
+  cups: "cup",
+  c: "cup",
+  pint: "pint",
+  pints: "pint",
+  pt: "pint",
+  pts: "pint",
+  quart: "quart",
+  quarts: "quart",
+  qt: "quart",
+  qts: "quart",
+  gallon: "gallon",
+  gallons: "gallon",
+  gal: "gallon",
+  milliliter: "ml",
+  milliliters: "ml",
+  ml: "ml",
+  millilitre: "ml",
+  millilitres: "ml",
+  liter: "l",
+  liters: "l",
+  litre: "l",
+  litres: "l",
+  l: "l",
 };
 
 const WEIGHT_ALIASES: Record<string, string> = {
-  ounce: "oz", ounces: "oz", oz: "oz",
-  pound: "lb", pounds: "lb", lb: "lb", lbs: "lb",
-  gram: "g", grams: "g", g: "g",
-  kilogram: "kg", kilograms: "kg", kg: "kg",
+  ounce: "oz",
+  ounces: "oz",
+  oz: "oz",
+  pound: "lb",
+  pounds: "lb",
+  lb: "lb",
+  lbs: "lb",
+  gram: "g",
+  grams: "g",
+  g: "g",
+  kilogram: "kg",
+  kilograms: "kg",
+  kg: "kg",
 };
 
 /** Convert any unit string to a canonical lowercase identifier, or return the original. */
@@ -43,22 +82,22 @@ export function normalizeUnit(raw: string): string {
 
 /** ml per unit (volume) */
 const VOLUME_TO_ML: Record<string, number> = {
-  tsp:    4.92892,
-  tbsp:   14.7868,
+  tsp: 4.92892,
+  tbsp: 14.7868,
   "fl oz": 29.5735,
-  cup:    236.588,
-  pint:   473.176,
-  quart:  946.353,
+  cup: 236.588,
+  pint: 473.176,
+  quart: 946.353,
   gallon: 3785.41,
-  ml:     1,
-  l:      1000,
+  ml: 1,
+  l: 1000,
 };
 
 /** grams per unit (weight) */
 const WEIGHT_TO_G: Record<string, number> = {
   oz: 28.3495,
   lb: 453.592,
-  g:  1,
+  g: 1,
   kg: 1000,
 };
 
@@ -90,7 +129,7 @@ export function mergeQuantities(
   existingQty: number,
   existingUnit: string,
   incomingQty: number,
-  incomingUnit: string
+  incomingUnit: string,
 ): { quantity: number; unit: string } | null {
   const eu = normalizeUnit(existingUnit);
   const iu = normalizeUnit(incomingUnit);
@@ -102,7 +141,8 @@ export function mergeQuantities(
 
   // Both volume?
   if (VOLUME_TO_ML[eu] !== undefined && VOLUME_TO_ML[iu] !== undefined) {
-    const totalMl = existingQty * VOLUME_TO_ML[eu] + incomingQty * VOLUME_TO_ML[iu];
+    const totalMl =
+      existingQty * VOLUME_TO_ML[eu] + incomingQty * VOLUME_TO_ML[iu];
     const targetUnit = bestVolumeUnit(totalMl);
     return {
       quantity: totalMl / VOLUME_TO_ML[targetUnit],
@@ -112,7 +152,8 @@ export function mergeQuantities(
 
   // Both weight?
   if (WEIGHT_TO_G[eu] !== undefined && WEIGHT_TO_G[iu] !== undefined) {
-    const totalG = existingQty * WEIGHT_TO_G[eu] + incomingQty * WEIGHT_TO_G[iu];
+    const totalG =
+      existingQty * WEIGHT_TO_G[eu] + incomingQty * WEIGHT_TO_G[iu];
     const targetUnit = bestWeightUnit(totalG);
     return {
       quantity: totalG / WEIGHT_TO_G[targetUnit],
@@ -130,12 +171,44 @@ export function mergeQuantities(
 
 /** Words that naturally end in 's' and should NOT have the s stripped. */
 const S_ENDINGS_EXCEPTIONS = new Set([
-  "asparagus", "hummus", "couscous", "molasses", "lentils", "oats",
-  "sprouts", "grits", "chips", "nuts", "clams", "mussels", "shrimp",
-  "scallops", "anchovies", "sardines", "capers", "herbs", "dates",
-  "figs", "beets", "greens", "leeks", "chives", "raisins", "grapes",
-  "fries", "berries", "cherries", "plums", "olives", "seeds",
-  "grains", "flakes", "crumbs", "beans", "peas", "rolls",
+  "asparagus",
+  "hummus",
+  "couscous",
+  "molasses",
+  "lentils",
+  "oats",
+  "sprouts",
+  "grits",
+  "chips",
+  "nuts",
+  "clams",
+  "mussels",
+  "shrimp",
+  "scallops",
+  "anchovies",
+  "sardines",
+  "capers",
+  "herbs",
+  "dates",
+  "figs",
+  "beets",
+  "greens",
+  "leeks",
+  "chives",
+  "raisins",
+  "grapes",
+  "fries",
+  "berries",
+  "cherries",
+  "plums",
+  "olives",
+  "seeds",
+  "grains",
+  "flakes",
+  "crumbs",
+  "beans",
+  "peas",
+  "rolls",
 ]);
 
 /**
@@ -212,12 +285,13 @@ export interface CartItemLike {
   name: string;
   quantity: string;
   unit: string;
+  sourceRecipe?: string | null;
 }
 
 export function findMatchingItem(
   candidates: CartItemLike[],
   incomingName: string,
-  incomingUnit: string
+  incomingUnit: string,
 ): CartItemLike | null {
   const iNameExact = incomingName.toLowerCase().trim();
   const iNameNorm = normalizeName(incomingName);
@@ -236,7 +310,7 @@ export function findMatchingItem(
       parseFloat(candidate.quantity),
       candidate.unit,
       1, // dummy quantity — we just need to check compatibility
-      incomingUnit
+      incomingUnit,
     );
     if (merged !== null) return candidate;
   }

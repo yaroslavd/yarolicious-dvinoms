@@ -126,6 +126,7 @@ Tests: `tests/e2e/`
 ### Testing
 
 The `api-server` package uses **Vitest** for automated testing:
+
 - Run tests: `pnpm --filter @workspace/api-server run test`
 - Config: `artifacts/api-server/vitest.config.ts`
 
@@ -141,7 +142,7 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 - **AI Generate**: Generate recipes via AI with a "Who's eating this?" profile selector; shows dietary suggestions after generation
 - **Import URL**: Import recipes from any food website with a "Who's eating this?" profile selector; shows dietary suggestions after extraction
 - **Recipe Detail**: Full recipe view with a "Dietary Compliance" section listing each profile's score (0-100%) and AI-generated reason
-- **Settings**: 
+- **Settings**:
   - Dietary Profiles card — create/edit/delete named profiles (e.g. "Me", "Sarah") with free-text dietary needs
   - ChatGPT Integration — connect a Custom GPT for recipe imports
 
@@ -173,10 +174,12 @@ Schema changes applied via `drizzle push` (see `scripts/post-merge.sh`). The DB 
 Allows importing recipes from ChatGPT into a pending queue for review before adding to the main collection.
 
 ### DB Tables Added
+
 - `chatgpt_pending_recipes` — stores recipes queued from ChatGPT (mirrors recipe fields + `status`, `createdAt`)
 - `api_keys` — stores hashed import API key (single-row settings table)
 
 ### API Routes (`/api/chatgpt/`)
+
 - `POST /import` — accepts recipe payload + Bearer token auth, saves to pending table
 - `GET /pending` — returns all pending recipes
 - `POST /pending/:id/confirm` — moves pending recipe to main `recipes` table, deletes from pending
@@ -185,5 +188,6 @@ Allows importing recipes from ChatGPT into a pending queue for review before add
 - `POST /api-key/regenerate` — generates new key, hashes + stores it, returns plaintext once
 
 ### Frontend
+
 - **Settings page** (`/settings`): ChatGPT Integration card. Shows masked API key with Regenerate button (with warning), numbered setup instructions, and copyable OpenAPI spec for Custom GPT action configuration.
 - **My Recipes page** (`/`): Added collapsible `ChatgptImportsSection` at the top. Appears only when pending recipes exist, shows badge count, polls every 30 seconds. Each card shows full recipe preview (name, description, ingredients/directions expandable, image, metadata). "Add to Collection" confirms; "Dismiss" (X) deletes.

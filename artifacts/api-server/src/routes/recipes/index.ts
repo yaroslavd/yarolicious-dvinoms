@@ -16,7 +16,10 @@ import {
   GenerateRecipeBody,
   GenerateRecipeResponse,
 } from "@workspace/api-zod";
-import { scrapeRecipeFromUrl, generateRecipeWithAI } from "../../lib/recipe-scraper";
+import {
+  scrapeRecipeFromUrl,
+  generateRecipeWithAI,
+} from "../../lib/recipe-scraper";
 import {
   downloadAndStoreImage,
   getStoredImage,
@@ -68,7 +71,7 @@ router.post("/recipes/generate", async (req, res): Promise<void> => {
   try {
     const recipe = await generateRecipeWithAI(
       parsed.data.description,
-      parsed.data.preferences
+      parsed.data.preferences,
     );
     res.json(GenerateRecipeResponse.parse(recipe));
   } catch (err: any) {
@@ -87,13 +90,17 @@ router.post("/recipes", async (req, res): Promise<void> => {
   let imageUrl: string | null = parsed.data.imageUrl ?? null;
 
   if (imageUrl && !isStoredImageUrl(imageUrl)) {
-    req.log.info(`[image-storage] Downloading image at recipe create: ${imageUrl}`);
+    req.log.info(
+      `[image-storage] Downloading image at recipe create: ${imageUrl}`,
+    );
     const storedUrl = await downloadAndStoreImage(imageUrl);
     if (storedUrl) {
       imageUrl = storedUrl;
       req.log.info(`[image-storage] Image stored, serving from: ${storedUrl}`);
     } else {
-      req.log.warn(`[image-storage] Could not store image — saving recipe without image`);
+      req.log.warn(
+        `[image-storage] Could not store image — saving recipe without image`,
+      );
       imageUrl = null;
     }
   }
@@ -125,9 +132,16 @@ router.post("/recipes", async (req, res): Promise<void> => {
 
   setImmediate(async () => {
     try {
-      await scoreRecipeForAllProfiles(recipe.id, recipe.ingredients, recipe.directions);
+      await scoreRecipeForAllProfiles(
+        recipe.id,
+        recipe.ingredients,
+        recipe.directions,
+      );
     } catch (err) {
-      req.log.warn({ err }, `Failed to score new recipe ${recipe.id} against dietary profiles`);
+      req.log.warn(
+        { err },
+        `Failed to score new recipe ${recipe.id} against dietary profiles`,
+      );
     }
   });
 });
@@ -169,7 +183,9 @@ router.get("/recipes/:id", async (req, res): Promise<void> => {
   const [recipe] = await db
     .select()
     .from(recipesTable)
-    .where(and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)));
+    .where(
+      and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)),
+    );
 
   if (!recipe) {
     res.status(404).json({ error: "Recipe not found" });
@@ -199,13 +215,17 @@ router.patch("/recipes/:id", async (req, res): Promise<void> => {
     parsed.data.imageUrl !== null &&
     !isStoredImageUrl(parsed.data.imageUrl)
   ) {
-    req.log.info(`[image-storage] Downloading image at recipe update: ${parsed.data.imageUrl}`);
+    req.log.info(
+      `[image-storage] Downloading image at recipe update: ${parsed.data.imageUrl}`,
+    );
     const storedUrl = await downloadAndStoreImage(parsed.data.imageUrl);
     if (storedUrl) {
       req.log.info(`[image-storage] Image stored, serving from: ${storedUrl}`);
       updateData = { ...parsed.data, imageUrl: storedUrl };
     } else {
-      req.log.warn(`[image-storage] Could not store updated image — setting imageUrl to null`);
+      req.log.warn(
+        `[image-storage] Could not store updated image — setting imageUrl to null`,
+      );
       updateData = { ...parsed.data, imageUrl: null };
     }
   }
@@ -237,7 +257,9 @@ router.delete("/recipes/:id", async (req, res): Promise<void> => {
   const [recipe] = await db
     .update(recipesTable)
     .set({ deletedAt: new Date() })
-    .where(and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)))
+    .where(
+      and(eq(recipesTable.id, params.data.id), isNull(recipesTable.deletedAt)),
+    )
     .returning();
 
   if (!recipe) {

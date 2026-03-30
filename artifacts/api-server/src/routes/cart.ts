@@ -4,7 +4,11 @@ import { db, shoppingCartItemsTable } from "@workspace/db";
 import { parseIngredient } from "../lib/ingredient-parser";
 import { categorizeIngredient } from "../lib/aisle-categorizer";
 import { generateIngredientThumbnail } from "../lib/thumbnail-generator";
-import { findMatchingItem, mergeQuantities, normalizeUnit } from "../lib/ingredient-dedup";
+import {
+  findMatchingItem,
+  mergeQuantities,
+  normalizeUnit,
+} from "../lib/ingredient-dedup";
 
 /** Merge an incoming recipe name into an existing comma-separated source list. */
 function mergeSourceRecipes(
@@ -13,7 +17,12 @@ function mergeSourceRecipes(
 ): string | null {
   const incomingName = incoming?.trim() || null;
   if (!incomingName) return existing;
-  const existingList = existing ? existing.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const existingList = existing
+    ? existing
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   if (existingList.includes(incomingName)) return existing;
   return [...existingList, incomingName].sort().join(", ");
 }
@@ -56,13 +65,16 @@ router.post("/cart/items", async (req, res): Promise<void> => {
         parseFloat(match.quantity),
         match.unit,
         quantity,
-        unit
+        unit,
       );
 
       if (merged) {
         // Round to avoid floating-point noise (max 6 decimal places)
         const roundedQty = parseFloat(merged.quantity.toFixed(6));
-        const newSourceRecipe = mergeSourceRecipes(match.sourceRecipe, body.sourceRecipe);
+        const newSourceRecipe = mergeSourceRecipes(
+          match.sourceRecipe ?? null,
+          body.sourceRecipe,
+        );
         const [updated] = await db
           .update(shoppingCartItemsTable)
           .set({
@@ -127,7 +139,10 @@ router.patch("/cart/items/:id", async (req, res): Promise<void> => {
   }
 
   const body = req.body as { quantity?: unknown; unit?: unknown };
-  const quantity = typeof body.quantity === "number" ? body.quantity : parseFloat(String(body.quantity));
+  const quantity =
+    typeof body.quantity === "number"
+      ? body.quantity
+      : parseFloat(String(body.quantity));
   const unit = typeof body.unit === "string" ? body.unit.trim() : null;
 
   if (isNaN(quantity) || quantity <= 0) {
@@ -135,7 +150,9 @@ router.patch("/cart/items/:id", async (req, res): Promise<void> => {
     return;
   }
   if (unit === null) {
-    res.status(400).json({ error: "unit is required (use empty string for count-based items)" });
+    res.status(400).json({
+      error: "unit is required (use empty string for count-based items)",
+    });
     return;
   }
 

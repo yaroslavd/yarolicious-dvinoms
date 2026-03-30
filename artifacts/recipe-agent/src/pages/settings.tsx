@@ -9,13 +9,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, CheckCircle2, AlertTriangle,
-  Check, Plus, Trash2, Edit3, X, User, Salad,
-  Bot, Key, Copy, Eye, EyeOff, RotateCcw,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  Check,
+  Plus,
+  Trash2,
+  Edit3,
+  X,
+  User,
+  Salad,
+  Bot,
+  Key,
+  Copy,
+  Eye,
+  EyeOff,
+  RotateCcw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { DietaryProfile } from "@workspace/api-client-react";
@@ -41,11 +60,21 @@ function ProfileCard({ profile, onDelete }: ProfileCardProps) {
   const handleSave = async () => {
     if (!name.trim() || !description.trim()) return;
     try {
-      await updateMutation.mutateAsync({ id: profile.id, data: { name: name.trim(), description: description.trim() } });
+      await updateMutation.mutateAsync({
+        id: profile.id,
+        data: { name: name.trim(), description: description.trim() },
+      });
       setIsEditing(false);
-      toast({ title: "Profile updated", description: `"${name}" has been updated. Scores will be recomputed.` });
+      toast({
+        title: "Profile updated",
+        description: `"${name}" has been updated. Scores will be recomputed.`,
+      });
     } catch (err: any) {
-      toast({ title: "Failed to update", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to update",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -80,13 +109,24 @@ function ProfileCard({ profile, onDelete }: ProfileCardProps) {
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={updateMutation.isPending || !name.trim() || !description.trim()}
+            disabled={
+              updateMutation.isPending || !name.trim() || !description.trim()
+            }
             className="h-8 text-xs"
           >
-            {updateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
+            {updateMutation.isPending ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Check className="w-3 h-3 mr-1" />
+            )}
             Save
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleCancel} className="h-8 text-xs">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCancel}
+            className="h-8 text-xs"
+          >
             <X className="w-3 h-3 mr-1" /> Cancel
           </Button>
         </div>
@@ -101,8 +141,12 @@ function ProfileCard({ profile, onDelete }: ProfileCardProps) {
           <User className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-sm text-foreground">{profile.name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{profile.description}</p>
+          <p className="font-semibold text-sm text-foreground">
+            {profile.name}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            {profile.description}
+          </p>
         </div>
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -138,14 +182,20 @@ function AddProfileForm({ onCancel }: { onCancel: () => void }) {
   const handleCreate = async () => {
     if (!name.trim() || !description.trim()) return;
     try {
-      await createMutation.mutateAsync({ data: { name: name.trim(), description: description.trim() } });
+      await createMutation.mutateAsync({
+        data: { name: name.trim(), description: description.trim() },
+      });
       onCancel();
       toast({
         title: `Profile "${name}" created`,
         description: "Compliance scores will be computed for existing recipes.",
       });
     } catch (err: any) {
-      toast({ title: "Failed to create profile", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to create profile",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -174,13 +224,24 @@ function AddProfileForm({ onCancel }: { onCancel: () => void }) {
         <Button
           size="sm"
           onClick={handleCreate}
-          disabled={createMutation.isPending || !name.trim() || !description.trim()}
+          disabled={
+            createMutation.isPending || !name.trim() || !description.trim()
+          }
           className="h-8 text-xs bg-primary hover:bg-primary/90"
         >
-          {createMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+          {createMutation.isPending ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Plus className="w-3 h-3 mr-1" />
+          )}
           Add Profile
         </Button>
-        <Button size="sm" variant="ghost" onClick={onCancel} className="h-8 text-xs">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onCancel}
+          className="h-8 text-xs"
+        >
           Cancel
         </Button>
       </div>
@@ -206,7 +267,11 @@ export default function Settings() {
       await deleteMutation.mutateAsync({ id });
       toast({ title: `Profile "${profile?.name}" deleted` });
     } catch (err: any) {
-      toast({ title: "Failed to delete", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to delete",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -218,7 +283,8 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: getChatgptApiKeyQueryKey() });
       toast({
         title: "API Key Regenerated",
-        description: "Your new key is shown below. Copy it now — it won't be shown again.",
+        description:
+          "Your new key is shown below. Copy it now — it won't be shown again.",
       });
     } catch (err: any) {
       toast({
@@ -295,11 +361,18 @@ paths:
           description: Unauthorized`;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto pt-8 space-y-8">
-
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-xl mx-auto pt-8 space-y-8"
+    >
       <div>
-        <h1 className="text-3xl font-serif font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your app integrations and preferences.</p>
+        <h1 className="text-3xl font-serif font-bold text-foreground">
+          Settings
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your app integrations and preferences.
+        </p>
       </div>
 
       {/* Dietary Profiles Card */}
@@ -310,9 +383,12 @@ paths:
               <Salad className="w-6 h-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-serif">Dietary Profiles</CardTitle>
+              <CardTitle className="text-xl font-serif">
+                Dietary Profiles
+              </CardTitle>
               <CardDescription className="mt-1">
-                Add profiles for each person. Recipes will be scored for how well they fit each profile.
+                Add profiles for each person. Recipes will be scored for how
+                well they fit each profile.
               </CardDescription>
             </div>
           </div>
@@ -329,13 +405,18 @@ paths:
               {profiles && profiles.length > 0 ? (
                 <div className="space-y-2">
                   {profiles.map((profile: DietaryProfile) => (
-                    <ProfileCard key={profile.id} profile={profile} onDelete={handleDeleteProfile} />
+                    <ProfileCard
+                      key={profile.id}
+                      profile={profile}
+                      onDelete={handleDeleteProfile}
+                    />
                   ))}
                 </div>
               ) : (
                 !showAddProfile && (
                   <p className="text-sm text-muted-foreground py-2">
-                    No profiles yet. Add a profile for each person eating from your cookbook.
+                    No profiles yet. Add a profile for each person eating from
+                    your cookbook.
                   </p>
                 )
               )}
@@ -356,7 +437,8 @@ paths:
 
               {profiles && profiles.length > 0 && (
                 <p className="text-xs text-muted-foreground pt-1">
-                  Compliance scores are computed automatically when you save a recipe or update a profile.
+                  Compliance scores are computed automatically when you save a
+                  recipe or update a profile.
                 </p>
               )}
             </>
@@ -372,9 +454,12 @@ paths:
               <Bot className="w-6 h-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-serif">ChatGPT Integration</CardTitle>
+              <CardTitle className="text-xl font-serif">
+                ChatGPT Integration
+              </CardTitle>
               <CardDescription className="mt-1">
-                Connect a Custom GPT so you can say "import this recipe" in ChatGPT and have it land here for review.
+                Connect a Custom GPT so you can say "import this recipe" in
+                ChatGPT and have it land here for review.
               </CardDescription>
             </div>
           </div>
@@ -388,7 +473,9 @@ paths:
                 <Key className="w-4 h-4 text-muted-foreground" />
                 <span className="font-medium text-sm">Import API Key</span>
                 {apiKeyData?.configured && (
-                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Active
+                  </Badge>
                 )}
               </div>
             </div>
@@ -396,9 +483,13 @@ paths:
             {revealedKey ? (
               <div className="space-y-2">
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl dark:bg-emerald-950/20 dark:border-emerald-800/40">
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium mb-1">Your new API key (copy it now — it won't be shown again):</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium mb-1">
+                    Your new API key (copy it now — it won't be shown again):
+                  </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs font-mono break-all text-emerald-900 dark:text-emerald-100">{revealedKey}</code>
+                    <code className="flex-1 text-xs font-mono break-all text-emerald-900 dark:text-emerald-100">
+                      {revealedKey}
+                    </code>
                     <Button
                       size="sm"
                       variant="outline"
@@ -421,7 +512,9 @@ paths:
             ) : apiKeyData?.configured ? (
               <div className="flex items-center gap-3">
                 <div className="flex-1 p-2.5 bg-muted/50 border border-border rounded-lg">
-                  <code className="text-sm font-mono text-muted-foreground">••••••••••••••••{apiKeyData.maskedKey}</code>
+                  <code className="text-sm font-mono text-muted-foreground">
+                    ••••••••••••••••{apiKeyData.maskedKey}
+                  </code>
                 </div>
                 {!showConfirmRegenerate ? (
                   <Button
@@ -442,15 +535,27 @@ paths:
                       disabled={regenerateMutation.isPending}
                       className="shrink-0"
                     >
-                      {regenerateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Yes, regenerate"}
+                      {regenerateMutation.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        "Yes, regenerate"
+                      )}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setShowConfirmRegenerate(false)}>Cancel</Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowConfirmRegenerate(false)}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">No API key yet. Generate one to get started.</p>
+                <p className="text-sm text-muted-foreground">
+                  No API key yet. Generate one to get started.
+                </p>
                 <Button
                   onClick={handleRegenerate}
                   disabled={regenerateMutation.isPending}
@@ -469,7 +574,10 @@ paths:
             {showConfirmRegenerate && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-950/20 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 text-sm flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-                <span>Regenerating will invalidate your current key. Your Custom GPT will stop working until you update it with the new key.</span>
+                <span>
+                  Regenerating will invalidate your current key. Your Custom GPT
+                  will stop working until you update it with the new key.
+                </span>
               </div>
             )}
           </div>
@@ -482,15 +590,36 @@ paths:
             </h4>
             <ol className="space-y-2 text-sm text-muted-foreground list-none">
               {[
-                <>Go to <strong>chatgpt.com → My GPTs → Create</strong>.</>,
-                <>Give your GPT a name like <em>"Culinary Agent"</em> and configure its instructions to import recipes when asked.</>,
-                <>In the GPT editor, click <strong>Create new action</strong> and paste the OpenAPI spec below.</>,
-                <>In the action's authentication settings, choose <strong>API Key</strong> as the auth type, set it to <strong>Bearer</strong>, and paste your API key above.</>,
-                <>Click <strong>Save</strong>, then test it: tell your GPT a recipe and say <em>"Import this into my Culinary Agent"</em>.</>,
-                <>Back in this app, go to <strong>My Recipes</strong> — you'll see the recipe appear in the ChatGPT Imports section for review.</>,
+                <>
+                  Go to <strong>chatgpt.com → My GPTs → Create</strong>.
+                </>,
+                <>
+                  Give your GPT a name like <em>"Culinary Agent"</em> and
+                  configure its instructions to import recipes when asked.
+                </>,
+                <>
+                  In the GPT editor, click <strong>Create new action</strong>{" "}
+                  and paste the OpenAPI spec below.
+                </>,
+                <>
+                  In the action's authentication settings, choose{" "}
+                  <strong>API Key</strong> as the auth type, set it to{" "}
+                  <strong>Bearer</strong>, and paste your API key above.
+                </>,
+                <>
+                  Click <strong>Save</strong>, then test it: tell your GPT a
+                  recipe and say <em>"Import this into my Culinary Agent"</em>.
+                </>,
+                <>
+                  Back in this app, go to <strong>My Recipes</strong> — you'll
+                  see the recipe appear in the ChatGPT Imports section for
+                  review.
+                </>,
               ].map((step, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center justify-center mt-0.5">
+                    {i + 1}
+                  </span>
                   <span>{step}</span>
                 </li>
               ))}
@@ -500,7 +629,9 @@ paths:
           {/* OpenAPI Spec */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-foreground">OpenAPI Action Spec</h4>
+              <h4 className="text-sm font-semibold text-foreground">
+                OpenAPI Action Spec
+              </h4>
               <Button
                 size="sm"
                 variant="outline"
@@ -516,7 +647,6 @@ paths:
           </div>
         </CardContent>
       </Card>
-
     </motion.div>
   );
 }

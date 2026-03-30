@@ -28,39 +28,58 @@ const AISLE_CATEGORIES: AisleCategory[] = [
 ];
 
 const FAST_PATH: Record<string, AisleCategory> = {
-  apple: "Produce", apples: "Produce",
-  banana: "Produce", bananas: "Produce",
-  orange: "Produce", oranges: "Produce",
-  lemon: "Produce", lemons: "Produce",
-  lime: "Produce", limes: "Produce",
-  tomato: "Produce", tomatoes: "Produce",
-  potato: "Produce", potatoes: "Produce",
-  onion: "Produce", onions: "Produce",
+  apple: "Produce",
+  apples: "Produce",
+  banana: "Produce",
+  bananas: "Produce",
+  orange: "Produce",
+  oranges: "Produce",
+  lemon: "Produce",
+  lemons: "Produce",
+  lime: "Produce",
+  limes: "Produce",
+  tomato: "Produce",
+  tomatoes: "Produce",
+  potato: "Produce",
+  potatoes: "Produce",
+  onion: "Produce",
+  onions: "Produce",
   garlic: "Produce",
-  carrot: "Produce", carrots: "Produce",
+  carrot: "Produce",
+  carrots: "Produce",
   celery: "Produce",
   spinach: "Produce",
   lettuce: "Produce",
-  cucumber: "Produce", cucumbers: "Produce",
+  cucumber: "Produce",
+  cucumbers: "Produce",
   zucchini: "Produce",
   broccoli: "Produce",
   cauliflower: "Produce",
-  "bell pepper": "Produce", peppers: "Produce", "bell peppers": "Produce",
-  mushroom: "Produce", mushrooms: "Produce",
-  avocado: "Produce", avocados: "Produce",
+  "bell pepper": "Produce",
+  peppers: "Produce",
+  "bell peppers": "Produce",
+  mushroom: "Produce",
+  mushrooms: "Produce",
+  avocado: "Produce",
+  avocados: "Produce",
   ginger: "Produce",
   cilantro: "Produce",
   parsley: "Produce",
   basil: "Produce",
   mint: "Produce",
   scallions: "Produce",
-  "green onion": "Produce", "green onions": "Produce",
-  shallot: "Produce", shallots: "Produce",
+  "green onion": "Produce",
+  "green onions": "Produce",
+  shallot: "Produce",
+  shallots: "Produce",
   kale: "Produce",
   arugula: "Produce",
-  strawberry: "Produce", strawberries: "Produce",
-  blueberry: "Produce", blueberries: "Produce",
-  raspberry: "Produce", raspberries: "Produce",
+  strawberry: "Produce",
+  strawberries: "Produce",
+  blueberry: "Produce",
+  blueberries: "Produce",
+  raspberry: "Produce",
+  raspberries: "Produce",
   milk: "Dairy",
   butter: "Dairy",
   cheese: "Dairy",
@@ -71,7 +90,8 @@ const FAST_PATH: Record<string, AisleCategory> = {
   "heavy cream": "Dairy",
   "sour cream": "Dairy",
   yogurt: "Dairy",
-  eggs: "Dairy", egg: "Dairy",
+  eggs: "Dairy",
+  egg: "Dairy",
   "cream cheese": "Dairy",
   "half and half": "Dairy",
   "whole milk": "Dairy",
@@ -193,7 +213,9 @@ const FAST_PATH: Record<string, AisleCategory> = {
   tea: "Beverages",
 };
 
-export async function categorizeIngredient(name: string): Promise<AisleCategory> {
+export async function categorizeIngredient(
+  name: string,
+): Promise<AisleCategory> {
   const normalized = name.toLowerCase().trim();
 
   if (FAST_PATH[normalized]) {
@@ -224,7 +246,7 @@ export async function categorizeIngredient(name: string): Promise<AisleCategory>
 
     const response = completion.choices[0]?.message?.content?.trim() ?? "Other";
     const matched = AISLE_CATEGORIES.find(
-      (cat) => cat.toLowerCase() === response.toLowerCase()
+      (cat) => cat.toLowerCase() === response.toLowerCase(),
     );
     return matched ?? "Other";
   } catch {

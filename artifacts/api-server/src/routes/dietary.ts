@@ -29,7 +29,7 @@ const router: IRouter = Router();
 async function computeComplianceScoreForRecipeAndProfile(
   ingredients: string,
   directions: string,
-  profileDescription: string
+  profileDescription: string,
 ): Promise<{ score: number; reason: string; pros: string[]; cons: string[] }> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -61,7 +61,12 @@ Evaluate compliance and return { score, reason, pros, cons }.`,
   });
 
   const content = completion.choices[0]?.message?.content ?? "{}";
-  let parsed: { score?: number; reason?: string; pros?: unknown; cons?: unknown };
+  let parsed: {
+    score?: number;
+    reason?: string;
+    pros?: unknown;
+    cons?: unknown;
+  };
   try {
     parsed = JSON.parse(content);
   } catch {
@@ -69,8 +74,12 @@ Evaluate compliance and return { score, reason, pros, cons }.`,
   }
 
   const score = Math.min(100, Math.max(0, Math.round(parsed.score ?? 50)));
-  const pros = Array.isArray(parsed.pros) ? (parsed.pros as string[]).slice(0, 3) : [];
-  const cons = Array.isArray(parsed.cons) ? (parsed.cons as string[]).slice(0, 3) : [];
+  const pros = Array.isArray(parsed.pros)
+    ? (parsed.pros as string[]).slice(0, 3)
+    : [];
+  const cons = Array.isArray(parsed.cons)
+    ? (parsed.cons as string[]).slice(0, 3)
+    : [];
 
   return {
     score,
@@ -111,7 +120,7 @@ router.post("/dietary-profiles", async (req, res): Promise<void> => {
           const result = await computeComplianceScoreForRecipeAndProfile(
             recipe.ingredients,
             recipe.directions,
-            profile.description
+            profile.description,
           );
           await db
             .insert(recipeComplianceScoresTable)
@@ -125,7 +134,10 @@ router.post("/dietary-profiles", async (req, res): Promise<void> => {
             })
             .onConflictDoNothing();
         } catch (err) {
-          req.log.warn({ err }, `Failed to score recipe ${recipe.id} for new profile ${profile.id}`);
+          req.log.warn(
+            { err },
+            `Failed to score recipe ${recipe.id} for new profile ${profile.id}`,
+          );
         }
       }
     } catch (err) {
@@ -168,7 +180,7 @@ router.patch("/dietary-profiles/:id", async (req, res): Promise<void> => {
           const result = await computeComplianceScoreForRecipeAndProfile(
             recipe.ingredients,
             recipe.directions,
-            profile.description
+            profile.description,
           );
           await db
             .delete(recipeComplianceScoresTable)
@@ -176,8 +188,8 @@ router.patch("/dietary-profiles/:id", async (req, res): Promise<void> => {
               and(
                 eq(recipeComplianceScoresTable.recipeId, recipe.id),
                 eq(recipeComplianceScoresTable.profileId, profile.id),
-                isNull(recipeComplianceScoresTable.versionId)
-              )
+                isNull(recipeComplianceScoresTable.versionId),
+              ),
             );
           await db.insert(recipeComplianceScoresTable).values({
             recipeId: recipe.id,
@@ -188,7 +200,10 @@ router.patch("/dietary-profiles/:id", async (req, res): Promise<void> => {
             consList: result.cons,
           });
         } catch (err) {
-          req.log.warn({ err }, `Failed to re-score recipe ${recipe.id} for profile ${profile.id}`);
+          req.log.warn(
+            { err },
+            `Failed to re-score recipe ${recipe.id} for profile ${profile.id}`,
+          );
         }
       }
     } catch (err) {
@@ -207,7 +222,12 @@ router.delete("/dietary-profiles/:id", async (req, res): Promise<void> => {
   const [profile] = await db
     .update(dietaryProfilesTable)
     .set({ deletedAt: new Date() })
-    .where(and(eq(dietaryProfilesTable.id, params.data.id), isNull(dietaryProfilesTable.deletedAt)))
+    .where(
+      and(
+        eq(dietaryProfilesTable.id, params.data.id),
+        isNull(dietaryProfilesTable.deletedAt),
+      ),
+    )
     .returning();
 
   if (!profile) {
@@ -218,26 +238,29 @@ router.delete("/dietary-profiles/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.post("/dietary-profiles/:id/restore", async (req, res): Promise<void> => {
-  const params = DeleteDietaryProfileParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+router.post(
+  "/dietary-profiles/:id/restore",
+  async (req, res): Promise<void> => {
+    const params = DeleteDietaryProfileParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
 
-  const [profile] = await db
-    .update(dietaryProfilesTable)
-    .set({ deletedAt: null })
-    .where(eq(dietaryProfilesTable.id, params.data.id))
-    .returning();
+    const [profile] = await db
+      .update(dietaryProfilesTable)
+      .set({ deletedAt: null })
+      .where(eq(dietaryProfilesTable.id, params.data.id))
+      .returning();
 
-  if (!profile) {
-    res.status(404).json({ error: "Profile not found" });
-    return;
-  }
+    if (!profile) {
+      res.status(404).json({ error: "Profile not found" });
+      return;
+    }
 
-  res.sendStatus(204);
-});
+    res.sendStatus(204);
+  },
+);
 
 router.post("/recipes/compliance-score", async (req, res): Promise<void> => {
   const parsed = ComputeComplianceScoreBody.safeParse(req.body);
@@ -250,7 +273,7 @@ router.post("/recipes/compliance-score", async (req, res): Promise<void> => {
     const result = await computeComplianceScoreForRecipeAndProfile(
       parsed.data.ingredients,
       parsed.data.directions,
-      parsed.data.profileDescription
+      parsed.data.profileDescription,
     );
 
     await db
@@ -259,8 +282,8 @@ router.post("/recipes/compliance-score", async (req, res): Promise<void> => {
         and(
           eq(recipeComplianceScoresTable.recipeId, parsed.data.recipeId),
           eq(recipeComplianceScoresTable.profileId, parsed.data.profileId),
-          isNull(recipeComplianceScoresTable.versionId)
-        )
+          isNull(recipeComplianceScoresTable.versionId),
+        ),
       );
 
     await db.insert(recipeComplianceScoresTable).values({
@@ -279,65 +302,75 @@ router.post("/recipes/compliance-score", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/recipes/compliance-scores/bulk", async (req, res): Promise<void> => {
-  const scores = await db
-    .select({
-      id: recipeComplianceScoresTable.id,
-      recipeId: recipeComplianceScoresTable.recipeId,
-      profileId: recipeComplianceScoresTable.profileId,
-      profileName: dietaryProfilesTable.name,
-      score: recipeComplianceScoresTable.score,
-      reason: recipeComplianceScoresTable.reason,
-      prosList: recipeComplianceScoresTable.prosList,
-      consList: recipeComplianceScoresTable.consList,
-      updatedAt: recipeComplianceScoresTable.updatedAt,
-    })
-    .from(recipeComplianceScoresTable)
-    .innerJoin(
-      dietaryProfilesTable,
-      eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id)
-    )
-    .where(isNull(recipeComplianceScoresTable.versionId));
-  res.json(scores);
-});
+router.get(
+  "/recipes/compliance-scores/bulk",
+  async (req, res): Promise<void> => {
+    const scores = await db
+      .select({
+        id: recipeComplianceScoresTable.id,
+        recipeId: recipeComplianceScoresTable.recipeId,
+        profileId: recipeComplianceScoresTable.profileId,
+        profileName: dietaryProfilesTable.name,
+        score: recipeComplianceScoresTable.score,
+        reason: recipeComplianceScoresTable.reason,
+        prosList: recipeComplianceScoresTable.prosList,
+        consList: recipeComplianceScoresTable.consList,
+        updatedAt: recipeComplianceScoresTable.updatedAt,
+      })
+      .from(recipeComplianceScoresTable)
+      .innerJoin(
+        dietaryProfilesTable,
+        eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id),
+      )
+      .where(isNull(recipeComplianceScoresTable.versionId));
+    res.json(scores);
+  },
+);
 
-router.get("/recipes/:id/compliance-scores", async (req, res): Promise<void> => {
-  const params = GetRecipeComplianceScoresParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+router.get(
+  "/recipes/:id/compliance-scores",
+  async (req, res): Promise<void> => {
+    const params = GetRecipeComplianceScoresParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
 
-  const versionId = req.query.versionId ? parseInt(req.query.versionId as string, 10) : null;
+    const versionId = req.query.versionId
+      ? parseInt(req.query.versionId as string, 10)
+      : null;
 
-  const conditions = [eq(recipeComplianceScoresTable.recipeId, params.data.id)];
-  if (versionId) {
-    conditions.push(eq(recipeComplianceScoresTable.versionId, versionId));
-  } else {
-    conditions.push(isNull(recipeComplianceScoresTable.versionId));
-  }
+    const conditions = [
+      eq(recipeComplianceScoresTable.recipeId, params.data.id),
+    ];
+    if (versionId) {
+      conditions.push(eq(recipeComplianceScoresTable.versionId, versionId));
+    } else {
+      conditions.push(isNull(recipeComplianceScoresTable.versionId));
+    }
 
-  const scores = await db
-    .select({
-      id: recipeComplianceScoresTable.id,
-      recipeId: recipeComplianceScoresTable.recipeId,
-      profileId: recipeComplianceScoresTable.profileId,
-      profileName: dietaryProfilesTable.name,
-      score: recipeComplianceScoresTable.score,
-      reason: recipeComplianceScoresTable.reason,
-      prosList: recipeComplianceScoresTable.prosList,
-      consList: recipeComplianceScoresTable.consList,
-      updatedAt: recipeComplianceScoresTable.updatedAt,
-    })
-    .from(recipeComplianceScoresTable)
-    .innerJoin(
-      dietaryProfilesTable,
-      eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id)
-    )
-    .where(and(...conditions));
+    const scores = await db
+      .select({
+        id: recipeComplianceScoresTable.id,
+        recipeId: recipeComplianceScoresTable.recipeId,
+        profileId: recipeComplianceScoresTable.profileId,
+        profileName: dietaryProfilesTable.name,
+        score: recipeComplianceScoresTable.score,
+        reason: recipeComplianceScoresTable.reason,
+        prosList: recipeComplianceScoresTable.prosList,
+        consList: recipeComplianceScoresTable.consList,
+        updatedAt: recipeComplianceScoresTable.updatedAt,
+      })
+      .from(recipeComplianceScoresTable)
+      .innerJoin(
+        dietaryProfilesTable,
+        eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id),
+      )
+      .where(and(...conditions));
 
-  res.json(scores);
-});
+    res.json(scores);
+  },
+);
 
 router.post("/recipes/dietary-suggestions", async (req, res): Promise<void> => {
   const parsed = GetDietarySuggestionsBody.safeParse(req.body);
@@ -354,7 +387,10 @@ router.post("/recipes/dietary-suggestions", async (req, res): Promise<void> => {
   }
 
   const profilesText = profiles
-    .map((p: { name: string; description: string }) => `- ${p.name}: ${p.description}`)
+    .map(
+      (p: { name: string; description: string }) =>
+        `- ${p.name}: ${p.description}`,
+    )
     .join("\n");
 
   try {
@@ -411,53 +447,56 @@ Suggest specific swaps to better fit these dietary needs.`,
   }
 });
 
-router.post("/recipes/:id/compliance-fix-preview", async (req, res): Promise<void> => {
-  const params = ComplianceFixPreviewParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+router.post(
+  "/recipes/:id/compliance-fix-preview",
+  async (req, res): Promise<void> => {
+    const params = ComplianceFixPreviewParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
 
-  const body = ComplianceFixPreviewBody.safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: body.error.message });
-    return;
-  }
+    const body = ComplianceFixPreviewBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
+    }
 
-  const [recipe] = await db
-    .select()
-    .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id));
+    const [recipe] = await db
+      .select()
+      .from(recipesTable)
+      .where(eq(recipesTable.id, params.data.id));
 
-  if (!recipe) {
-    res.status(404).json({ error: "Recipe not found" });
-    return;
-  }
+    if (!recipe) {
+      res.status(404).json({ error: "Recipe not found" });
+      return;
+    }
 
-  const selectedProfiles = body.data.profileIds.length > 0
-    ? await db
-        .select()
-        .from(dietaryProfilesTable)
-        .where(inArray(dietaryProfilesTable.id, body.data.profileIds))
-    : [];
+    const selectedProfiles =
+      body.data.profileIds.length > 0
+        ? await db
+            .select()
+            .from(dietaryProfilesTable)
+            .where(inArray(dietaryProfilesTable.id, body.data.profileIds))
+        : [];
 
-  if (selectedProfiles.length === 0) {
-    res.status(400).json({ error: "No valid profiles selected" });
-    return;
-  }
+    if (selectedProfiles.length === 0) {
+      res.status(400).json({ error: "No valid profiles selected" });
+      return;
+    }
 
-  try {
-    const profilesText = selectedProfiles
-      .map((p) => `- ${p.name}: ${p.description}`)
-      .join("\n");
+    try {
+      const profilesText = selectedProfiles
+        .map((p) => `- ${p.name}: ${p.description}`)
+        .join("\n");
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_completion_tokens: 2048,
-      messages: [
-        {
-          role: "system",
-          content: `You are a dietary compliance expert. Given a recipe and dietary profiles to optimize for, suggest specific ingredient or technique swaps that STRICTLY IMPROVE compliance. Every suggestion must make the recipe MORE compliant — never less. For each suggestion, provide:
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_completion_tokens: 2048,
+        messages: [
+          {
+            role: "system",
+            content: `You are a dietary compliance expert. Given a recipe and dietary profiles to optimize for, suggest specific ingredient or technique swaps that STRICTLY IMPROVE compliance. Every suggestion must make the recipe MORE compliant — never less. For each suggestion, provide:
 - field: "ingredients" or "directions"
 - original: the exact text to replace (must be a substring present in the recipe)
 - suggested: the replacement text
@@ -470,10 +509,10 @@ Rules:
 - Do not suggest removing an item unless a direct replacement is provided
 
 Return a JSON object with a "suggestions" array (3-6 items). Return ONLY the JSON object, no markdown.`,
-        },
-        {
-          role: "user",
-          content: `Recipe: ${recipe.name}
+          },
+          {
+            role: "user",
+            content: `Recipe: ${recipe.name}
 
 Ingredients:
 ${recipe.ingredients}
@@ -485,182 +524,216 @@ Dietary profiles to optimize for:
 ${profilesText}
 
 Suggest swaps to improve compliance with these profiles.`,
-        },
-      ],
-    });
-
-    const content = completion.choices[0]?.message?.content ?? "{}";
-    let aiResult: { suggestions?: unknown[] };
-    try {
-      aiResult = JSON.parse(content);
-    } catch {
-      aiResult = { suggestions: [] };
-    }
-
-    const rawSuggestions = Array.isArray(aiResult.suggestions) ? aiResult.suggestions : [];
-
-    const suggestions: {
-      field: string;
-      original: string;
-      suggested: string;
-      description: string;
-      profileName: string;
-      scoreBefore: number;
-      scoreAfter: number;
-    }[] = [];
-
-    let modifiedIngredients = recipe.ingredients;
-    let modifiedDirections = recipe.directions;
-
-    for (const raw of rawSuggestions) {
-      const s = raw as {
-        field?: string;
-        original?: string;
-        suggested?: string;
-        description?: string;
-        profileName?: string;
-      };
-      if (!s.field || !s.original || !s.suggested) continue;
-      suggestions.push({
-        field: s.field,
-        original: s.original,
-        suggested: s.suggested,
-        description: s.description ?? `Replace "${s.original}" with "${s.suggested}"`,
-        profileName: s.profileName ?? selectedProfiles[0].name,
-        scoreBefore: 0,
-        scoreAfter: 0,
+          },
+        ],
       });
-      if (s.field === "ingredients") {
-        modifiedIngredients = modifiedIngredients.replace(s.original, s.suggested);
-      } else if (s.field === "directions") {
-        modifiedDirections = modifiedDirections.replace(s.original, s.suggested);
+
+      const content = completion.choices[0]?.message?.content ?? "{}";
+      let aiResult: { suggestions?: unknown[] };
+      try {
+        aiResult = JSON.parse(content);
+      } catch {
+        aiResult = { suggestions: [] };
       }
-    }
 
-    const projectedScores: {
-      profileId: number;
-      profileName: string;
-      scoreBefore: number;
-      scoreAfter: number;
-    }[] = [];
+      const rawSuggestions = Array.isArray(aiResult.suggestions)
+        ? aiResult.suggestions
+        : [];
 
-    for (const profile of selectedProfiles) {
-      const [beforeResult, afterResult] = await Promise.all([
-        computeComplianceScoreForRecipeAndProfile(
-          recipe.ingredients,
-          recipe.directions,
-          profile.description
-        ),
-        computeComplianceScoreForRecipeAndProfile(
-          modifiedIngredients,
-          modifiedDirections,
-          profile.description
-        ),
-      ]);
+      const suggestions: {
+        field: string;
+        original: string;
+        suggested: string;
+        description: string;
+        profileName: string;
+        scoreBefore: number;
+        scoreAfter: number;
+      }[] = [];
 
-      const scoreBefore = beforeResult.score;
-      const scoreAfter = Math.max(scoreBefore, afterResult.score);
+      let modifiedIngredients = recipe.ingredients;
+      let modifiedDirections = recipe.directions;
 
-      projectedScores.push({
-        profileId: profile.id,
-        profileName: profile.name,
-        scoreBefore,
-        scoreAfter,
-      });
-
-      for (const suggestion of suggestions) {
-        if (suggestion.profileName === profile.name) {
-          suggestion.scoreBefore = scoreBefore;
-          suggestion.scoreAfter = scoreAfter;
+      for (const raw of rawSuggestions) {
+        const s = raw as {
+          field?: string;
+          original?: string;
+          suggested?: string;
+          description?: string;
+          profileName?: string;
+        };
+        if (!s.field || !s.original || !s.suggested) continue;
+        suggestions.push({
+          field: s.field,
+          original: s.original,
+          suggested: s.suggested,
+          description:
+            s.description ?? `Replace "${s.original}" with "${s.suggested}"`,
+          profileName: s.profileName ?? selectedProfiles[0].name,
+          scoreBefore: 0,
+          scoreAfter: 0,
+        });
+        if (s.field === "ingredients") {
+          modifiedIngredients = modifiedIngredients.replace(
+            s.original,
+            s.suggested,
+          );
+        } else if (s.field === "directions") {
+          modifiedDirections = modifiedDirections.replace(
+            s.original,
+            s.suggested,
+          );
         }
       }
+
+      const projectedScores: {
+        profileId: number;
+        profileName: string;
+        scoreBefore: number;
+        scoreAfter: number;
+      }[] = [];
+
+      for (const profile of selectedProfiles) {
+        const [beforeResult, afterResult] = await Promise.all([
+          computeComplianceScoreForRecipeAndProfile(
+            recipe.ingredients,
+            recipe.directions,
+            profile.description,
+          ),
+          computeComplianceScoreForRecipeAndProfile(
+            modifiedIngredients,
+            modifiedDirections,
+            profile.description,
+          ),
+        ]);
+
+        const scoreBefore = beforeResult.score;
+        const scoreAfter = Math.max(scoreBefore, afterResult.score);
+
+        projectedScores.push({
+          profileId: profile.id,
+          profileName: profile.name,
+          scoreBefore,
+          scoreAfter,
+        });
+
+        for (const suggestion of suggestions) {
+          if (suggestion.profileName === profile.name) {
+            suggestion.scoreBefore = scoreBefore;
+            suggestion.scoreAfter = scoreAfter;
+          }
+        }
+      }
+
+      res.json({ suggestions, projectedScores });
+    } catch (err: any) {
+      req.log.error({ err }, "Failed to compute compliance fix preview");
+      res
+        .status(500)
+        .json({ error: err.message ?? "Failed to compute preview" });
+    }
+  },
+);
+
+router.post(
+  "/recipes/:id/compliance-versions",
+  async (req, res): Promise<void> => {
+    const params = SaveComplianceVersionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
     }
 
-    res.json({ suggestions, projectedScores });
-  } catch (err: any) {
-    req.log.error({ err }, "Failed to compute compliance fix preview");
-    res.status(500).json({ error: err.message ?? "Failed to compute preview" });
-  }
-});
-
-router.post("/recipes/:id/compliance-versions", async (req, res): Promise<void> => {
-  const params = SaveComplianceVersionParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const body = SaveComplianceVersionBody.safeParse(req.body);
-  if (!body.success) {
-    res.status(400).json({ error: body.error.message });
-    return;
-  }
-
-  const [recipe] = await db
-    .select()
-    .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id));
-
-  if (!recipe) {
-    res.status(404).json({ error: "Recipe not found" });
-    return;
-  }
-
-  const existingVersions = await db
-    .select()
-    .from(recipeVersionsTable)
-    .where(and(eq(recipeVersionsTable.recipeId, params.data.id), isNull(recipeVersionsTable.deletedAt)));
-
-  const labelConflict = existingVersions.some(
-    (v) => v.label.trim().toLowerCase() === body.data.label.trim().toLowerCase()
-  );
-  if (labelConflict) {
-    res.status(409).json({ error: `A version named "${body.data.label}" already exists. Please choose a different name.` });
-    return;
-  }
-
-  let newIngredients = recipe.ingredients;
-  let newDirections = recipe.directions;
-
-  for (const suggestion of body.data.suggestions) {
-    if (suggestion.field === "ingredients") {
-      newIngredients = newIngredients.replace(suggestion.original, suggestion.suggested);
-    } else if (suggestion.field === "directions") {
-      newDirections = newDirections.replace(suggestion.original, suggestion.suggested);
+    const body = SaveComplianceVersionBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.message });
+      return;
     }
-  }
 
-  if (existingVersions.length === 0) {
-    await db.insert(recipeVersionsTable).values({
-      recipeId: params.data.id,
-      label: "Original",
-      ingredients: recipe.ingredients,
-      directions: recipe.directions,
-      isOriginal: true,
+    const [recipe] = await db
+      .select()
+      .from(recipesTable)
+      .where(eq(recipesTable.id, params.data.id));
+
+    if (!recipe) {
+      res.status(404).json({ error: "Recipe not found" });
+      return;
+    }
+
+    const existingVersions = await db
+      .select()
+      .from(recipeVersionsTable)
+      .where(
+        and(
+          eq(recipeVersionsTable.recipeId, params.data.id),
+          isNull(recipeVersionsTable.deletedAt),
+        ),
+      );
+
+    const labelConflict = existingVersions.some(
+      (v) =>
+        v.label.trim().toLowerCase() === body.data.label.trim().toLowerCase(),
+    );
+    if (labelConflict) {
+      res.status(409).json({
+        error: `A version named "${body.data.label}" already exists. Please choose a different name.`,
+      });
+      return;
+    }
+
+    let newIngredients = recipe.ingredients;
+    let newDirections = recipe.directions;
+
+    for (const suggestion of body.data.suggestions) {
+      if (suggestion.field === "ingredients") {
+        newIngredients = newIngredients.replace(
+          suggestion.original,
+          suggestion.suggested,
+        );
+      } else if (suggestion.field === "directions") {
+        newDirections = newDirections.replace(
+          suggestion.original,
+          suggestion.suggested,
+        );
+      }
+    }
+
+    if (existingVersions.length === 0) {
+      await db.insert(recipeVersionsTable).values({
+        recipeId: params.data.id,
+        label: "Original",
+        ingredients: recipe.ingredients,
+        directions: recipe.directions,
+        isOriginal: true,
+      });
+    }
+
+    const [version] = await db
+      .insert(recipeVersionsTable)
+      .values({
+        recipeId: params.data.id,
+        label: body.data.label,
+        ingredients: newIngredients,
+        directions: newDirections,
+        isOriginal: false,
+      })
+      .returning();
+
+    res.status(201).json(version);
+
+    setImmediate(async () => {
+      try {
+        await scoreVersionForAllProfiles(
+          version.id,
+          params.data.id,
+          newIngredients,
+          newDirections,
+        );
+      } catch (err) {
+        req.log.warn({ err }, `Failed to score new version ${version.id}`);
+      }
     });
-  }
-
-  const [version] = await db
-    .insert(recipeVersionsTable)
-    .values({
-      recipeId: params.data.id,
-      label: body.data.label,
-      ingredients: newIngredients,
-      directions: newDirections,
-      isOriginal: false,
-    })
-    .returning();
-
-  res.status(201).json(version);
-
-  setImmediate(async () => {
-    try {
-      await scoreVersionForAllProfiles(version.id, params.data.id, newIngredients, newDirections);
-    } catch (err) {
-      req.log.warn({ err }, `Failed to score new version ${version.id}`);
-    }
-  });
-});
+  },
+);
 
 router.get("/recipes/:id/versions", async (req, res): Promise<void> => {
   const params = ListRecipeVersionsParams.safeParse(req.params);
@@ -688,128 +761,147 @@ router.get("/recipes/:id/versions", async (req, res): Promise<void> => {
       createdAt: recipeVersionsTable.createdAt,
     })
     .from(recipeVersionsTable)
-    .where(and(eq(recipeVersionsTable.recipeId, params.data.id), isNull(recipeVersionsTable.deletedAt)))
+    .where(
+      and(
+        eq(recipeVersionsTable.recipeId, params.data.id),
+        isNull(recipeVersionsTable.deletedAt),
+      ),
+    )
     .orderBy(recipeVersionsTable.createdAt);
 
   const versionIds = versions.map((v) => v.id);
-  const allScores = versionIds.length > 0
-    ? await db
-        .select({
-          versionId: recipeComplianceScoresTable.versionId,
-          profileId: recipeComplianceScoresTable.profileId,
-          profileName: dietaryProfilesTable.name,
-          score: recipeComplianceScoresTable.score,
-        })
-        .from(recipeComplianceScoresTable)
-        .innerJoin(
-          dietaryProfilesTable,
-          eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id)
-        )
-        .where(inArray(recipeComplianceScoresTable.versionId, versionIds))
-    : [];
+  const allScores =
+    versionIds.length > 0
+      ? await db
+          .select({
+            versionId: recipeComplianceScoresTable.versionId,
+            profileId: recipeComplianceScoresTable.profileId,
+            profileName: dietaryProfilesTable.name,
+            score: recipeComplianceScoresTable.score,
+          })
+          .from(recipeComplianceScoresTable)
+          .innerJoin(
+            dietaryProfilesTable,
+            eq(recipeComplianceScoresTable.profileId, dietaryProfilesTable.id),
+          )
+          .where(inArray(recipeComplianceScoresTable.versionId, versionIds))
+      : [];
 
   const versionsWithScores = versions.map((v) => ({
     ...v,
     scores: allScores
       .filter((s) => s.versionId === v.id)
-      .map((s) => ({ profileId: s.profileId, profileName: s.profileName, score: s.score })),
+      .map((s) => ({
+        profileId: s.profileId,
+        profileName: s.profileName,
+        score: s.score,
+      })),
   }));
 
   res.json(versionsWithScores);
 });
 
-router.get("/recipes/:id/versions/:versionId", async (req, res): Promise<void> => {
-  const params = GetRecipeVersionParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+router.get(
+  "/recipes/:id/versions/:versionId",
+  async (req, res): Promise<void> => {
+    const params = GetRecipeVersionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
 
-  const [version] = await db
-    .select()
-    .from(recipeVersionsTable)
-    .where(
-      and(
-        eq(recipeVersionsTable.id, params.data.versionId),
-        eq(recipeVersionsTable.recipeId, params.data.id)
+    const [version] = await db
+      .select()
+      .from(recipeVersionsTable)
+      .where(
+        and(
+          eq(recipeVersionsTable.id, params.data.versionId),
+          eq(recipeVersionsTable.recipeId, params.data.id),
+        ),
+      );
+
+    if (!version) {
+      res.status(404).json({ error: "Version not found" });
+      return;
+    }
+
+    res.json(version);
+  },
+);
+
+router.delete(
+  "/recipes/:id/versions/:versionId",
+  async (req, res): Promise<void> => {
+    const params = GetRecipeVersionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const [version] = await db
+      .select()
+      .from(recipeVersionsTable)
+      .where(
+        and(
+          eq(recipeVersionsTable.id, params.data.versionId),
+          eq(recipeVersionsTable.recipeId, params.data.id),
+          isNull(recipeVersionsTable.deletedAt),
+        ),
+      );
+
+    if (!version) {
+      res.status(404).json({ error: "Version not found" });
+      return;
+    }
+
+    if (version.isOriginal) {
+      res.status(400).json({ error: "Cannot delete the original version." });
+      return;
+    }
+
+    await db
+      .update(recipeVersionsTable)
+      .set({ deletedAt: new Date() })
+      .where(eq(recipeVersionsTable.id, params.data.versionId));
+
+    res.sendStatus(204);
+  },
+);
+
+router.post(
+  "/recipes/:id/versions/:versionId/restore",
+  async (req, res): Promise<void> => {
+    const params = GetRecipeVersionParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const [version] = await db
+      .update(recipeVersionsTable)
+      .set({ deletedAt: null })
+      .where(
+        and(
+          eq(recipeVersionsTable.id, params.data.versionId),
+          eq(recipeVersionsTable.recipeId, params.data.id),
+        ),
       )
-    );
+      .returning();
 
-  if (!version) {
-    res.status(404).json({ error: "Version not found" });
-    return;
-  }
+    if (!version) {
+      res.status(404).json({ error: "Version not found" });
+      return;
+    }
 
-  res.json(version);
-});
-
-router.delete("/recipes/:id/versions/:versionId", async (req, res): Promise<void> => {
-  const params = GetRecipeVersionParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [version] = await db
-    .select()
-    .from(recipeVersionsTable)
-    .where(
-      and(
-        eq(recipeVersionsTable.id, params.data.versionId),
-        eq(recipeVersionsTable.recipeId, params.data.id),
-        isNull(recipeVersionsTable.deletedAt)
-      )
-    );
-
-  if (!version) {
-    res.status(404).json({ error: "Version not found" });
-    return;
-  }
-
-  if (version.isOriginal) {
-    res.status(400).json({ error: "Cannot delete the original version." });
-    return;
-  }
-
-  await db
-    .update(recipeVersionsTable)
-    .set({ deletedAt: new Date() })
-    .where(eq(recipeVersionsTable.id, params.data.versionId));
-
-  res.sendStatus(204);
-});
-
-router.post("/recipes/:id/versions/:versionId/restore", async (req, res): Promise<void> => {
-  const params = GetRecipeVersionParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [version] = await db
-    .update(recipeVersionsTable)
-    .set({ deletedAt: null })
-    .where(
-      and(
-        eq(recipeVersionsTable.id, params.data.versionId),
-        eq(recipeVersionsTable.recipeId, params.data.id)
-      )
-    )
-    .returning();
-
-  if (!version) {
-    res.status(404).json({ error: "Version not found" });
-    return;
-  }
-
-  res.sendStatus(204);
-});
+    res.sendStatus(204);
+  },
+);
 
 async function scoreVersionForAllProfiles(
   versionId: number,
   recipeId: number,
   ingredients: string,
-  directions: string
+  directions: string,
 ): Promise<void> {
   const profiles = await db.select().from(dietaryProfilesTable);
   for (const profile of profiles) {
@@ -817,7 +909,7 @@ async function scoreVersionForAllProfiles(
       const result = await computeComplianceScoreForRecipeAndProfile(
         ingredients,
         directions,
-        profile.description
+        profile.description,
       );
       await db.insert(recipeComplianceScoresTable).values({
         recipeId,
@@ -837,7 +929,7 @@ async function scoreVersionForAllProfiles(
 export async function scoreRecipeForAllProfiles(
   recipeId: number,
   ingredients: string,
-  directions: string
+  directions: string,
 ): Promise<void> {
   const profiles = await db.select().from(dietaryProfilesTable);
   for (const profile of profiles) {
@@ -845,7 +937,7 @@ export async function scoreRecipeForAllProfiles(
       const result = await computeComplianceScoreForRecipeAndProfile(
         ingredients,
         directions,
-        profile.description
+        profile.description,
       );
       await db
         .delete(recipeComplianceScoresTable)
@@ -853,8 +945,8 @@ export async function scoreRecipeForAllProfiles(
           and(
             eq(recipeComplianceScoresTable.recipeId, recipeId),
             eq(recipeComplianceScoresTable.profileId, profile.id),
-            isNull(recipeComplianceScoresTable.versionId)
-          )
+            isNull(recipeComplianceScoresTable.versionId),
+          ),
         );
       await db.insert(recipeComplianceScoresTable).values({
         recipeId,
@@ -879,8 +971,8 @@ export async function seedOriginalVersionsForExistingRecipes(): Promise<void> {
       .where(
         and(
           eq(recipeVersionsTable.recipeId, recipe.id),
-          eq(recipeVersionsTable.isOriginal, true)
-        )
+          eq(recipeVersionsTable.isOriginal, true),
+        ),
       );
     if (existing.length === 0) {
       await db.insert(recipeVersionsTable).values({

@@ -1,4 +1,11 @@
-import { pgTable, serial, text, boolean, integer, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  serial,
+  text,
+  boolean,
+  integer,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { recipesTable } from "./recipes";
@@ -16,7 +23,9 @@ export const recipeVersionsTable = pgTable("recipe_versions", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const insertRecipeVersionSchema = createInsertSchema(recipeVersionsTable).omit({
+export const insertRecipeVersionSchema = createInsertSchema(
+  recipeVersionsTable,
+).omit({
   id: true,
   createdAt: true,
   deletedAt: true,

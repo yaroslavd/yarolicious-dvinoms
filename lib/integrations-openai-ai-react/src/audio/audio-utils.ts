@@ -25,7 +25,7 @@ export function decodePCM16ToFloat32(base64Audio: string): Float32Array {
  */
 export async function createAudioPlaybackContext(
   workletPath: string,
-  sampleRate = 24000
+  sampleRate = 24000,
 ): Promise<{ ctx: AudioContext; worklet: AudioWorkletNode }> {
   if (!workletPath) {
     throw new Error("workletPath is required for audio playback");

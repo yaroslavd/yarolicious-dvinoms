@@ -9,12 +9,12 @@ export const PLACEHOLDER_THUMBNAIL = "";
  * Storing the data (not a temporary URL) means the thumbnail never expires.
  */
 export async function generateIngredientThumbnail(
-  ingredientName: string
+  ingredientName: string,
 ): Promise<string> {
   try {
     const raw = await generateImageBuffer(
       `A clean digital illustration of a single ${ingredientName}, like a polished food app icon or high-quality food emoji. Slightly stylized — not a photograph, but detailed enough to be clearly recognizable. Natural colors, gentle shading, simple highlight. Pure white background. One item only, no garnishes, no props, no text. The shape should be immediately obvious at a small size.`,
-      "1024x1024"
+      "1024x1024",
     );
 
     const resized = await sharp(raw)
@@ -24,7 +24,10 @@ export async function generateIngredientThumbnail(
 
     return `data:image/jpeg;base64,${resized.toString("base64")}`;
   } catch (err) {
-    console.error("[thumbnail-generator] failed:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[thumbnail-generator] failed:",
+      err instanceof Error ? err.message : String(err),
+    );
     return PLACEHOLDER_THUMBNAIL;
   }
 }

@@ -29,7 +29,9 @@ export async function scrapeRecipeFromUrl(url: string): Promise<ScrapedRecipe> {
   });
 
   if (!fetchResponse.ok) {
-    throw new Error(`Failed to fetch URL: ${fetchResponse.status} ${fetchResponse.statusText}`);
+    throw new Error(
+      `Failed to fetch URL: ${fetchResponse.status} ${fetchResponse.statusText}`,
+    );
   }
 
   const html = await fetchResponse.text();
@@ -99,7 +101,7 @@ Return ONLY the JSON object, no markdown.`,
 
 export async function generateRecipeWithAI(
   description: string,
-  preferences?: string | null
+  preferences?: string | null,
 ): Promise<ScrapedRecipe> {
   const prompt = preferences
     ? `${description}\n\nDietary preferences/restrictions: ${preferences}`

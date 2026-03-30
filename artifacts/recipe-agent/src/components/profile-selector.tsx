@@ -37,7 +37,9 @@ export function ProfileSelector({ selected, onChange }: ProfileSelectorProps) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Users className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">Who's eating this?</span>
+        <span className="text-sm font-medium text-foreground">
+          Who's eating this?
+        </span>
       </div>
       <div className="flex flex-wrap gap-3">
         {profiles.map((profile: DietaryProfile) => (

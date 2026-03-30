@@ -194,19 +194,27 @@ describe("parseIngredient", () => {
 
   describe("preparation-state qualifier stripping", () => {
     it("strips ', peeled' from name", () => {
-      expect(parseIngredient("russet potatoes, peeled").name).toBe("russet potatoes");
+      expect(parseIngredient("russet potatoes, peeled").name).toBe(
+        "russet potatoes",
+      );
     });
 
     it("strips prep qualifier following parenthetical: 'potatoes (about 5), peeled'", () => {
-      expect(parseIngredient("russet potatoes (about 5), peeled").name).toBe("russet potatoes (about 5)");
+      expect(parseIngredient("russet potatoes (about 5), peeled").name).toBe(
+        "russet potatoes (about 5)",
+      );
     });
 
     it("strips ', softened' from name", () => {
-      expect(parseIngredient("unsalted butter, softened").name).toBe("unsalted butter");
+      expect(parseIngredient("unsalted butter, softened").name).toBe(
+        "unsalted butter",
+      );
     });
 
     it("strips ', melted' from name", () => {
-      expect(parseIngredient("dark chocolate, melted").name).toBe("dark chocolate");
+      expect(parseIngredient("dark chocolate, melted").name).toBe(
+        "dark chocolate",
+      );
     });
 
     it("strips ', separated' from name", () => {
@@ -218,7 +226,9 @@ describe("parseIngredient", () => {
     });
 
     it("strips ', finely chopped' (adverb + prep word) from name", () => {
-      expect(parseIngredient("flat-leaf parsley, finely chopped").name).toBe("flat-leaf parsley");
+      expect(parseIngredient("flat-leaf parsley, finely chopped").name).toBe(
+        "flat-leaf parsley",
+      );
     });
 
     it("strips ', minced' from name", () => {
@@ -226,11 +236,15 @@ describe("parseIngredient", () => {
     });
 
     it("strips ', drained' from name", () => {
-      expect(parseIngredient("canned chickpeas, drained").name).toBe("canned chickpeas");
+      expect(parseIngredient("canned chickpeas, drained").name).toBe(
+        "canned chickpeas",
+      );
     });
 
     it("strips ', at room temperature' from name", () => {
-      expect(parseIngredient("cream cheese, at room temperature").name).toBe("cream cheese");
+      expect(parseIngredient("cream cheese, at room temperature").name).toBe(
+        "cream cheese",
+      );
     });
 
     it("strips ', room temperature' from name", () => {
@@ -238,7 +252,9 @@ describe("parseIngredient", () => {
     });
 
     it("strips ', melted, or use vegetable oil' (prep word + more text) from name", () => {
-      expect(parseIngredient("chicken fat, melted, or use vegetable oil").name).toBe("chicken fat");
+      expect(
+        parseIngredient("chicken fat, melted, or use vegetable oil").name,
+      ).toBe("chicken fat");
     });
 
     it("strips ', sifted' from name", () => {

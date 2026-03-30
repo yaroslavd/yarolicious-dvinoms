@@ -1,4 +1,11 @@
-import { pgTable, serial, integer, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  serial,
+  integer,
+  text,
+  timestamp,
+  jsonb,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { recipesTable } from "./recipes";
@@ -24,7 +31,9 @@ export const recipeComplianceScoresTable = pgTable("recipe_compliance_scores", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertComplianceScoreSchema = createInsertSchema(recipeComplianceScoresTable).omit({
+export const insertComplianceScoreSchema = createInsertSchema(
+  recipeComplianceScoresTable,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

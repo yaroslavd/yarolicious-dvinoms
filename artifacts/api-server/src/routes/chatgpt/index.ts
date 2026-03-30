@@ -26,7 +26,9 @@ function maskKey(rawKey: string): string {
   return `...${rawKey.slice(-4)}`;
 }
 
-async function validateBearerToken(authHeader: string | undefined): Promise<boolean> {
+async function validateBearerToken(
+  authHeader: string | undefined,
+): Promise<boolean> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
   const token = authHeader.slice(7);
   const hashed = hashKey(token);
@@ -37,7 +39,9 @@ async function validateBearerToken(authHeader: string | undefined): Promise<bool
 router.post("/chatgpt/import", async (req, res): Promise<void> => {
   const isValid = await validateBearerToken(req.headers.authorization);
   if (!isValid) {
-    res.status(401).json({ error: "Unauthorized. Invalid or missing API key." });
+    res
+      .status(401)
+      .json({ error: "Unauthorized. Invalid or missing API key." });
     return;
   }
 
@@ -73,7 +77,7 @@ router.post("/chatgpt/import", async (req, res): Promise<void> => {
     ChatgptImportResponse.parse({
       message: `Recipe "${parsed.data.name}" has been queued for review in your Culinary Agent. Open the app to confirm or dismiss it.`,
       id: pending.id,
-    })
+    }),
   );
 });
 
@@ -155,7 +159,7 @@ router.get("/chatgpt/api-key", async (_req, res): Promise<void> => {
     GetApiKeyResponse.parse({
       configured: !!key,
       maskedKey: key ? key.maskedKey : null,
-    })
+    }),
   );
 });
 
@@ -172,14 +176,16 @@ router.post("/chatgpt/api-key/regenerate", async (_req, res): Promise<void> => {
       .set({ hashedKey: hashed, maskedKey: masked, updatedAt: new Date() })
       .where(eq(apiKeysTable.id, existing[0].id));
   } else {
-    await db.insert(apiKeysTable).values({ hashedKey: hashed, maskedKey: masked });
+    await db
+      .insert(apiKeysTable)
+      .values({ hashedKey: hashed, maskedKey: masked });
   }
 
   res.json(
     RegenerateApiKeyResponse.parse({
       apiKey: rawKey,
       maskedKey: masked,
-    })
+    }),
   );
 });
 

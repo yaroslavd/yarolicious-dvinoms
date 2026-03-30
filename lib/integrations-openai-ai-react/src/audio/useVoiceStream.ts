@@ -39,7 +39,10 @@ function toError(error: unknown): Error {
   return new Error(typeof error === "string" ? error : "Unknown error");
 }
 
-function notifyError(callbacks: Pick<StreamCallbacks, "onError">, error: Error) {
+function notifyError(
+  callbacks: Pick<StreamCallbacks, "onError">,
+  error: Error,
+) {
   try {
     callbacks.onError?.(error);
   } catch {
@@ -131,7 +134,7 @@ function handleVoiceStreamEvent(
   event: VoiceStreamEvent,
   playback: PlaybackHandle,
   callbacks: Omit<StreamCallbacks, "workletPath">,
-  state: StreamState
+  state: StreamState,
 ) {
   if (isDoneEvent(event)) {
     if (!state.didComplete) {
@@ -278,7 +281,7 @@ export function useVoiceStream({ workletPath, ...callbacks }: StreamCallbacks) {
             event,
             playbackRef.current,
             callbacksRef.current,
-            state
+            state,
           );
         }
       };
@@ -294,7 +297,10 @@ export function useVoiceStream({ workletPath, ...callbacks }: StreamCallbacks) {
 
         playbackRef.current.clear();
 
-        const base64Audio = await blobToBase64(audioBlob, abortController.signal);
+        const base64Audio = await blobToBase64(
+          audioBlob,
+          abortController.signal,
+        );
         throwIfNotCurrent();
 
         const response = await fetch(url, {
@@ -313,7 +319,7 @@ export function useVoiceStream({ workletPath, ...callbacks }: StreamCallbacks) {
           throw new Error(
             detail
               ? `Voice request failed (${response.status} ${response.statusText}): ${detail}`
-              : `Voice request failed (${response.status} ${response.statusText})`
+              : `Voice request failed (${response.status} ${response.statusText})`,
           );
         }
 
@@ -358,7 +364,7 @@ export function useVoiceStream({ workletPath, ...callbacks }: StreamCallbacks) {
               event,
               playbackRef.current,
               callbacksRef.current,
-              state
+              state,
             );
           }
         } finally {
@@ -385,7 +391,7 @@ export function useVoiceStream({ workletPath, ...callbacks }: StreamCallbacks) {
         }
       }
     },
-    []
+    [],
   );
 
   return { streamVoiceResponse, playbackState: playback.state };

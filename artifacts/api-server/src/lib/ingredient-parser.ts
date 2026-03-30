@@ -55,19 +55,32 @@ function parseFraction(s: string): number | null {
 }
 
 const UNITS = [
-  "teaspoons?", "tsps?",
-  "tablespoons?", "tbsps?", "tbs",
+  "teaspoons?",
+  "tsps?",
+  "tablespoons?",
+  "tbsps?",
+  "tbs",
   "cups?",
-  "fluid ounces?", "fl\\.?\\s*oz\\.?",
-  "ounces?", "oz\\.?",
-  "pounds?", "lbs?\\.?",
-  "grams?", "g",
-  "kilograms?", "kg",
-  "milliliters?", "ml",
-  "liters?", "l",
-  "pints?", "pts?\\.?",
-  "quarts?", "qts?\\.?",
-  "gallons?", "gal",
+  "fluid ounces?",
+  "fl\\.?\\s*oz\\.?",
+  "ounces?",
+  "oz\\.?",
+  "pounds?",
+  "lbs?\\.?",
+  "grams?",
+  "g",
+  "kilograms?",
+  "kg",
+  "milliliters?",
+  "ml",
+  "liters?",
+  "l",
+  "pints?",
+  "pts?\\.?",
+  "quarts?",
+  "qts?\\.?",
+  "gallons?",
+  "gal",
   "pieces?",
   "slices?",
   "cloves?",
@@ -76,9 +89,11 @@ const UNITS = [
   "heads?",
   "cans?",
   "jars?",
-  "packages?", "pkgs?\\.?",
+  "packages?",
+  "pkgs?\\.?",
   "sprigs?",
-  "leaves?", "leaf",
+  "leaves?",
+  "leaf",
   "strips?",
   "sheets?",
   "pinch(?:es)?",
@@ -99,10 +114,7 @@ const UNITS = [
   "rounds?",
 ];
 
-const UNIT_REGEX = new RegExp(
-  `^(${UNITS.join("|")})\\b`,
-  "i"
-);
+const UNIT_REGEX = new RegExp(`^(${UNITS.join("|")})\\b`, "i");
 
 export interface ParsedIngredient {
   quantity: number;
@@ -121,7 +133,7 @@ export function parseIngredient(raw: string): ParsedIngredient {
 
   const quantityRegex = new RegExp(
     `^(${numPattern})(?:\\s*-\\s*(${numPattern}))?\\s*`,
-    "u"
+    "u",
   );
 
   let rest = raw;
@@ -178,10 +190,12 @@ export function parseIngredient(raw: string): ParsedIngredient {
   // Strip cooking-purpose qualifiers (", for dusting", ", to taste", etc.) and
   // preparation-state qualifiers that don't belong on a shopping list
   // (", peeled", ", softened", ", finely chopped", ", at room temperature", etc.)
-  name = name.replace(
-    /,\s*(?:for\b|to\b|as\s+(?:needed|required)|optional\b|(?:at\s+)?room\s+temperature\b|(?:(?:very|lightly|finely|roughly|coarsely|thinly|freshly|well|loosely|barely|evenly)\s+)*(?:peeled|softened|melted|separated|zested|chopped|diced|minced|sliced|crushed|grated|trimmed|thawed|frozen|drained|rinsed|toasted|roasted|blanched|cooked|beaten|sifted|packed|halved|quartered|shredded|cubed|crumbled|mashed|pureed|blended|ground|pitted|seeded|deveined|browned|caramelized|cooled|warmed|chilled|stemmed|dried|soaked|torn|flaked|whipped|whisked|boiled|steamed|smoked|pickled|aged|juiced|skinned|butterflied|cold|warm)\b).*$/i,
-    ""
-  ).trim();
+  name = name
+    .replace(
+      /,\s*(?:for\b|to\b|as\s+(?:needed|required)|optional\b|(?:at\s+)?room\s+temperature\b|(?:(?:very|lightly|finely|roughly|coarsely|thinly|freshly|well|loosely|barely|evenly)\s+)*(?:peeled|softened|melted|separated|zested|chopped|diced|minced|sliced|crushed|grated|trimmed|thawed|frozen|drained|rinsed|toasted|roasted|blanched|cooked|beaten|sifted|packed|halved|quartered|shredded|cubed|crumbled|mashed|pureed|blended|ground|pitted|seeded|deveined|browned|caramelized|cooled|warmed|chilled|stemmed|dried|soaked|torn|flaked|whipped|whisked|boiled|steamed|smoked|pickled|aged|juiced|skinned|butterflied|cold|warm)\b).*$/i,
+      "",
+    )
+    .trim();
 
   return { quantity, unit, name };
 }

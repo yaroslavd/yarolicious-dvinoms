@@ -34,7 +34,9 @@ function getGcsClient(): Storage {
 function getBucketAndPrefix(): { bucketName: string; prefix: string } {
   const privateObjectDir = process.env.PRIVATE_OBJECT_DIR ?? "";
   if (!privateObjectDir) {
-    throw new Error("PRIVATE_OBJECT_DIR not set — object storage not configured");
+    throw new Error(
+      "PRIVATE_OBJECT_DIR not set — object storage not configured",
+    );
   }
   const parts = privateObjectDir.replace(/^\//, "").split("/");
   const bucketName = parts[0];
@@ -42,7 +44,10 @@ function getBucketAndPrefix(): { bucketName: string; prefix: string } {
   return { bucketName, prefix };
 }
 
-function detectContentType(url: string, contentTypeHeader?: string | null): string {
+function detectContentType(
+  url: string,
+  contentTypeHeader?: string | null,
+): string {
   if (contentTypeHeader && contentTypeHeader.startsWith("image/")) {
     return contentTypeHeader.split(";")[0].trim();
   }
@@ -84,7 +89,7 @@ export function buildImageServingUrl(filename: string): string {
  * to saving the recipe without an image.
  */
 export async function downloadAndStoreImage(
-  sourceUrl: string
+  sourceUrl: string,
 ): Promise<string | null> {
   try {
     const res = await fetch(sourceUrl, {
@@ -97,12 +102,15 @@ export async function downloadAndStoreImage(
 
     if (!res.ok) {
       console.warn(
-        `[image-storage] Download failed for "${sourceUrl}": HTTP ${res.status}`
+        `[image-storage] Download failed for "${sourceUrl}": HTTP ${res.status}`,
       );
       return null;
     }
 
-    const contentType = detectContentType(sourceUrl, res.headers.get("content-type"));
+    const contentType = detectContentType(
+      sourceUrl,
+      res.headers.get("content-type"),
+    );
     const ext = contentTypeToExt(contentType);
     const buf = Buffer.from(await res.arrayBuffer());
 
@@ -129,13 +137,13 @@ export async function downloadAndStoreImage(
 
     const servingUrl = buildImageServingUrl(filename);
     console.log(
-      `[image-storage] Stored image from "${sourceUrl}" → ${servingUrl} (${buf.length} bytes)`
+      `[image-storage] Stored image from "${sourceUrl}" → ${servingUrl} (${buf.length} bytes)`,
     );
     return servingUrl;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn(
-      `[image-storage] Failed to store image from "${sourceUrl}": ${message}`
+      `[image-storage] Failed to store image from "${sourceUrl}": ${message}`,
     );
     return null;
   }
@@ -166,7 +174,8 @@ export async function getStoredImage(filename: string): Promise<{
     }
 
     const [metadata] = await file.getMetadata();
-    const contentType = (metadata.contentType as string | undefined) ?? "image/jpeg";
+    const contentType =
+      (metadata.contentType as string | undefined) ?? "image/jpeg";
     const rawSize = metadata.size;
     const contentLength =
       rawSize !== undefined && rawSize !== null ? Number(rawSize) : undefined;
@@ -176,7 +185,7 @@ export async function getStoredImage(filename: string): Promise<{
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn(
-      `[image-storage] Failed to retrieve image "${filename}": ${message}`
+      `[image-storage] Failed to retrieve image "${filename}": ${message}`,
     );
     return null;
   }
@@ -187,7 +196,9 @@ export async function getStoredImage(filename: string): Promise<{
  * Returns null if the URL is not a stored image URL.
  * Stored image URLs look like: https://<domain>/api/recipes/image/<filename>
  */
-export function extractStoredImageFilename(imageUrl: string | null | undefined): string | null {
+export function extractStoredImageFilename(
+  imageUrl: string | null | undefined,
+): string | null {
   if (!imageUrl) return null;
   const match = imageUrl.match(/\/api\/recipes\/image\/([^/?#]+)$/);
   return match ? match[1] : null;

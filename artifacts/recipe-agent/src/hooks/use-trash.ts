@@ -9,7 +9,10 @@ import {
   useHardDeleteProfile as useOrvalHardDeleteProfile,
   useHardDeleteVersion as useOrvalHardDeleteVersion,
 } from "@workspace/api-client-react";
-import { getListRecipesQueryKey, getListDietaryProfilesQueryKey } from "@workspace/api-client-react";
+import {
+  getListRecipesQueryKey,
+  getListDietaryProfilesQueryKey,
+} from "@workspace/api-client-react";
 
 export function useTrash() {
   return useGetTrash({ query: { queryKey: getGetTrashQueryKey() } });
@@ -33,7 +36,9 @@ export function useRestoreDietaryProfile() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetTrashQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListDietaryProfilesQueryKey() });
+        queryClient.invalidateQueries({
+          queryKey: getListDietaryProfilesQueryKey(),
+        });
       },
     },
   });
