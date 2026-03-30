@@ -1,0 +1,75 @@
+name: Beta – CI + Deploy
+
+on:
+  push:
+    branches:
+      - beta
+
+concurrency:
+  group: beta-deploy
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: Full Quality Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        run: pnpm run test
+
+      - name: Lint (Prettier)
+        run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: pnpm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ vars.BETA_APP_URL }}
+
+  deploy:
+    name: Deploy to Beta
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Replit Beta deployment
+        run: |
+          curl -sf -X POST "${{ secrets.REPLIT_BETA_DEPLOY_HOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{"branch": "beta"}'
+        env:
+          REPLIT_BETA_DEPLOY_HOOK: ${{ secrets.REPLIT_BETA_DEPLOY_HOOK }}
