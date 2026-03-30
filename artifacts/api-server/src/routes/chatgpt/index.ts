@@ -120,7 +120,6 @@ router.post("/chatgpt/pending/:id/confirm", async (req, res): Promise<void> => {
     imageUrl: pending.imageUrl ?? null,
     categories: pending.categories ?? null,
     difficulty: pending.difficulty ?? null,
-    exportedToPaprika: false,
   });
 
   await db

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, isNull, and } from "drizzle-orm";
-import { db, recipesTable, paprikaCredentialsTable } from "@workspace/db";
+import { db, recipesTable } from "@workspace/db";
 import { scoreRecipeForAllProfiles } from "../dietary";
 import {
   ListRecipesResponse,
@@ -15,13 +15,8 @@ import {
   ImportRecipeFromUrlResponse,
   GenerateRecipeBody,
   GenerateRecipeResponse,
-  ExportRecipeToPaprikaParams,
-  ExportRecipeToPaprikaResponse,
 } from "@workspace/api-zod";
-import zlib from "zlib";
-import { randomUUID, createHash } from "crypto";
 import { scrapeRecipeFromUrl, generateRecipeWithAI } from "../../lib/recipe-scraper";
-import { syncRecipeToPaprika } from "../../lib/paprika";
 import {
   downloadAndStoreImage,
   getStoredImage,
@@ -34,39 +29,6 @@ import {
  */
 function isStoredImageUrl(imageUrl: string | null | undefined): boolean {
   return extractStoredImageFilename(imageUrl) !== null;
-}
-
-async function fetchImageAsBase64ForFile(
-  url: string,
-  log: { warn: (msg: string) => void }
-): Promise<{ data: string; hash: string; filename: string } | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) {
-      log.warn(`[paprika-file] Image fetch failed for URL "${url}": HTTP ${res.status}`);
-      return null;
-    }
-    const buf = Buffer.from(await res.arrayBuffer());
-    const data = buf.toString("base64");
-    const hash = createHash("sha256").update(buf).digest("hex");
-    let filename = "photo.jpg";
-    try {
-      const ext = new URL(url).pathname.split(".").pop()?.toLowerCase();
-      if (ext && ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
-        filename = `photo.${ext}`;
-      }
-    } catch {
-      // ignore
-    }
-    return { data, hash, filename };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    log.warn(`[paprika-file] Image fetch error for URL "${url}": ${message}`);
-    return null;
-  }
 }
 
 const router: IRouter = Router();
@@ -154,7 +116,6 @@ router.post("/recipes", async (req, res): Promise<void> => {
       imageUrl,
       categories: parsed.data.categories ?? null,
       difficulty: parsed.data.difficulty ?? null,
-      exportedToPaprika: false,
       originType: parsed.data.originType ?? null,
       generationPrompt: parsed.data.generationPrompt ?? null,
     })
@@ -196,81 +157,6 @@ router.get("/recipes/image/:filename", async (req, res): Promise<void> => {
     res.setHeader("Content-Length", String(image.contentLength));
   }
   image.stream.pipe(res);
-});
-
-router.get("/recipes/:id/paprika-file", async (req, res): Promise<void> => {
-  const params = GetRecipeParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [recipe] = await db
-    .select()
-    .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id));
-
-  if (!recipe) {
-    res.status(404).json({ error: "Recipe not found" });
-    return;
-  }
-
-  const uid = randomUUID();
-
-  let photo = "";
-  let photoHash: string | null = null;
-  let photoFilename: string | null = null;
-  if (recipe.imageUrl) {
-    const img = await fetchImageAsBase64ForFile(recipe.imageUrl, {
-      warn: (msg) => req.log.warn(msg),
-    });
-    if (img) {
-      photo = img.data;
-      photoHash = img.hash;
-      photoFilename = img.filename;
-      req.log.info(`[paprika] Image embedded in .paprikarecipe file for recipe id=${recipe.id}`);
-    } else {
-      req.log.warn(`[paprika] Could not embed image for recipe id=${recipe.id} (url=${recipe.imageUrl})`);
-    }
-  }
-
-  const paprikaRecipe = {
-    uid,
-    name: recipe.name,
-    description: recipe.description ?? "",
-    ingredients: recipe.ingredients,
-    directions: recipe.directions,
-    servings: recipe.servings ?? "",
-    total_time: recipe.totalTime ?? "",
-    prep_time: recipe.prepTime ?? "",
-    cook_time: recipe.cookTime ?? "",
-    notes: recipe.notes ?? "",
-    nutritional_info: recipe.nutritionalInfo ?? "",
-    source: recipe.source ?? "",
-    source_url: recipe.sourceUrl ?? "",
-    image_url: recipe.imageUrl ?? "",
-    categories: recipe.categories ? recipe.categories.split(",").map((c: string) => c.trim()) : [],
-    difficulty: recipe.difficulty ?? "",
-    rating: 0,
-    on_favorites: false,
-    in_trash: false,
-    hash: uid,
-    photo,
-    photo_hash: photoHash,
-    photo_filename: photoFilename,
-    photo_large: null,
-    scale: null,
-  };
-
-  const jsonBuf = Buffer.from(JSON.stringify(paprikaRecipe), "utf-8");
-  const gzipped = await new Promise<Buffer>((resolve, reject) => {
-    zlib.gzip(jsonBuf, (err, result) => (err ? reject(err) : resolve(result)));
-  });
-
-  const safeName = recipe.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-  res.setHeader("Content-Type", "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${safeName}.paprikarecipe"`);
-  res.send(gzipped);
 });
 
 router.get("/recipes/:id", async (req, res): Promise<void> => {
@@ -381,102 +267,6 @@ router.post("/recipes/:id/restore", async (req, res): Promise<void> => {
   }
 
   res.sendStatus(204);
-});
-
-router.post("/recipes/:id/export-to-paprika", async (req, res): Promise<void> => {
-  const params = ExportRecipeToPaprikaParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const [recipe] = await db
-    .select()
-    .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id));
-
-  if (!recipe) {
-    res.status(404).json({ error: "Recipe not found" });
-    return;
-  }
-
-  const [creds] = await db
-    .select()
-    .from(paprikaCredentialsTable)
-    .orderBy(paprikaCredentialsTable.updatedAt)
-    .limit(1);
-
-  if (!creds) {
-    res.status(400).json({
-      error: "Paprika credentials not configured. Please add them in Settings.",
-    });
-    return;
-  }
-
-  const password = Buffer.from(creds.encryptedPassword, "base64").toString("utf-8");
-
-  if (recipe.imageUrl) {
-    req.log.info(
-      `[paprika] Syncing recipe id=${recipe.id} with image URL: ${recipe.imageUrl}`
-    );
-  } else {
-    req.log.info(`[paprika] Syncing recipe id=${recipe.id} without image`);
-  }
-
-  try {
-    const result = await syncRecipeToPaprika(creds.email, password, {
-      dbId: recipe.id,
-      name: recipe.name,
-      description: recipe.description,
-      ingredients: recipe.ingredients,
-      directions: recipe.directions,
-      servings: recipe.servings,
-      totalTime: recipe.totalTime,
-      prepTime: recipe.prepTime,
-      cookTime: recipe.cookTime,
-      notes: recipe.notes,
-      nutritionalInfo: recipe.nutritionalInfo,
-      source: recipe.source,
-      sourceUrl: recipe.sourceUrl,
-      imageUrl: recipe.imageUrl,
-      categories: recipe.categories,
-      difficulty: recipe.difficulty,
-    });
-
-    if (result.success) {
-      await db
-        .update(recipesTable)
-        .set({ exportedToPaprika: true, paprikaUid: result.uid, updatedAt: new Date() })
-        .where(eq(recipesTable.id, params.data.id));
-
-      if (result.imageEmbedded) {
-        req.log.info(
-          `[paprika] Image successfully embedded in Paprika payload for recipe id=${recipe.id}`
-        );
-      } else if (recipe.imageUrl) {
-        req.log.warn(
-          `[paprika] Image could NOT be embedded in Paprika payload for recipe id=${recipe.id} (url=${recipe.imageUrl}) — recipe synced without image`
-        );
-      }
-    }
-
-    res.json(
-      ExportRecipeToPaprikaResponse.parse({
-        success: result.success,
-        message: result.message,
-        paprikaUid: result.uid || null,
-      })
-    );
-  } catch (err: any) {
-    req.log.error({ err }, "Failed to export to Paprika");
-    res.json(
-      ExportRecipeToPaprikaResponse.parse({
-        success: false,
-        message: err.message ?? "Export failed",
-        paprikaUid: null,
-      })
-    );
-  }
 });
 
 export default router;

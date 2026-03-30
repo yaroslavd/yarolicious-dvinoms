@@ -1,6 +1,5 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { migratePaprikaUids } from "./lib/migrate-paprika-uids";
 import { seedOriginalVersionsForExistingRecipes } from "./routes/dietary";
 import { regenerateMissingThumbnails } from "./routes/cart";
 
@@ -25,14 +24,6 @@ app.listen(port, async (err) => {
   }
 
   logger.info({ port }, "Server listening");
-
-  // Idempotent migration: ensure all recipe paprika_uids match their
-  // deterministic values. No-ops when already correct.
-  try {
-    await migratePaprikaUids();
-  } catch (migErr: any) {
-    logger.warn({ err: migErr.message }, "Paprika UID migration skipped (non-fatal)");
-  }
 
   // Seed original versions for all existing recipes that don't have one yet.
   try {

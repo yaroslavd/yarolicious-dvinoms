@@ -110,11 +110,8 @@ export interface Recipe {
   categories?: string | null;
   /** @nullable */
   difficulty?: string | null;
-  /** Star rating from Paprika (0-5) */
+  /** Star rating (0-5) */
   rating: number;
-  exportedToPaprika: boolean;
-  /** @nullable */
-  paprikaUid?: string | null;
   /**
    * How the recipe was created: 'imported', 'ai_generated', or 'manual'
    * @nullable
@@ -137,70 +134,6 @@ export interface GenerateRecipeBody {
   description: string;
   /** @nullable */
   preferences?: string | null;
-}
-
-export interface PaprikaExportResult {
-  success: boolean;
-  message: string;
-  /** @nullable */
-  paprikaUid?: string | null;
-}
-
-export interface PaprikaCredentials {
-  configured: boolean;
-  /** @nullable */
-  email?: string | null;
-}
-
-export interface PaprikaCredentialsInput {
-  email: string;
-  password: string;
-}
-
-export interface PaprikaCategory {
-  uid: string;
-  name: string;
-}
-
-export interface PaprikaCategoriesResponse {
-  categories: PaprikaCategory[];
-}
-
-export interface CategorizationSuggestion {
-  recipeId: number;
-  recipeName: string;
-  currentCategories: string[];
-  toAdd: PaprikaCategory[];
-}
-
-export interface CategorizationPreview {
-  suggestions: CategorizationSuggestion[];
-}
-
-export interface CategorizationApplication {
-  recipeId: number;
-  categoryUids: string[];
-  categoryNames: string[];
-}
-
-export interface CategorizationApplyBody {
-  applications: CategorizationApplication[];
-}
-
-export interface CategorizationApplyResult {
-  applied: number;
-  errors: string[];
-}
-
-export interface PaprikaImportResult {
-  /** Total number of recipes found in Paprika */
-  found: number;
-  /** Number of recipes newly imported into the local database */
-  imported: number;
-  /** Number of recipes already present locally or deleted in Paprika */
-  skipped: number;
-  /** Per-recipe error messages for any failures during import */
-  errors: string[];
 }
 
 export interface DietaryProfile {

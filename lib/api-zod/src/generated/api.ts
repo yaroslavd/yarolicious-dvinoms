@@ -35,9 +35,7 @@ export const ListRecipesResponseItem = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
-  rating: zod.number().describe("Star rating from Paprika (0-5)"),
-  exportedToPaprika: zod.boolean(),
-  paprikaUid: zod.string().nullish(),
+  rating: zod.number().describe("Star rating (0-5)"),
   originType: zod
     .union([
       zod.literal("imported"),
@@ -122,9 +120,7 @@ export const GetRecipeResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
-  rating: zod.number().describe("Star rating from Paprika (0-5)"),
-  exportedToPaprika: zod.boolean(),
-  paprikaUid: zod.string().nullish(),
+  rating: zod.number().describe("Star rating (0-5)"),
   originType: zod
     .union([
       zod.literal("imported"),
@@ -205,9 +201,7 @@ export const UpdateRecipeResponse = zod.object({
   imageUrl: zod.string().nullish(),
   categories: zod.string().nullish(),
   difficulty: zod.string().nullish(),
-  rating: zod.number().describe("Star rating from Paprika (0-5)"),
-  exportedToPaprika: zod.boolean(),
-  paprikaUid: zod.string().nullish(),
+  rating: zod.number().describe("Star rating (0-5)"),
   originType: zod
     .union([
       zod.literal("imported"),
@@ -326,19 +320,6 @@ export const GenerateRecipeResponse = zod.object({
     .describe(
       "The prompt used to generate this recipe (only for ai_generated recipes)",
     ),
-});
-
-/**
- * @summary Export a saved recipe to Paprika
- */
-export const ExportRecipeToPaprikaParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const ExportRecipeToPaprikaResponse = zod.object({
-  success: zod.boolean(),
-  message: zod.string(),
-  paprikaUid: zod.string().nullish(),
 });
 
 /**
@@ -764,96 +745,6 @@ export const GetChatgptApiKeyResponse = zod.object({
 export const RegenerateChatgptApiKeyResponse = zod.object({
   apiKey: zod.string(),
   maskedKey: zod.string(),
-});
-
-/**
- * @summary Check if Paprika credentials are configured
- */
-export const GetPaprikaCredentialsResponse = zod.object({
-  configured: zod.boolean(),
-  email: zod.string().nullish(),
-});
-
-/**
- * @summary Set Paprika account credentials
- */
-export const SetPaprikaCredentialsBody = zod.object({
-  email: zod.string(),
-  password: zod.string(),
-});
-
-export const SetPaprikaCredentialsResponse = zod.object({
-  configured: zod.boolean(),
-  email: zod.string().nullish(),
-});
-
-/**
- * @summary Fetch categories live from the user's Paprika account
- */
-export const GetPaprikaCategoriesResponse = zod.object({
-  categories: zod.array(
-    zod.object({
-      uid: zod.string(),
-      name: zod.string(),
-    }),
-  ),
-});
-
-/**
- * @summary Get AI-suggested category additions for all recipes
- */
-export const CategorizationPreviewResponse = zod.object({
-  suggestions: zod.array(
-    zod.object({
-      recipeId: zod.number(),
-      recipeName: zod.string(),
-      currentCategories: zod.array(zod.string()),
-      toAdd: zod.array(
-        zod.object({
-          uid: zod.string(),
-          name: zod.string(),
-        }),
-      ),
-    }),
-  ),
-});
-
-/**
- * @summary Apply category updates to recipes and re-sync to Paprika
- */
-export const CategorizationApplyBody = zod.object({
-  applications: zod.array(
-    zod.object({
-      recipeId: zod.number(),
-      categoryUids: zod.array(zod.string()),
-      categoryNames: zod.array(zod.string()),
-    }),
-  ),
-});
-
-export const CategorizationApplyResponse = zod.object({
-  applied: zod.number(),
-  errors: zod.array(zod.string()),
-});
-
-/**
- * Fetches all recipes from the user's Paprika account, resolves categories, stores embedded photos as data URIs, and inserts recipes not already present (matched by paprikaUid). Returns a summary of found, imported, and skipped counts.
-
- * @summary Import all recipes from the user's Paprika account into the local database
- */
-export const ImportFromPaprikaResponse = zod.object({
-  found: zod.number().describe("Total number of recipes found in Paprika"),
-  imported: zod
-    .number()
-    .describe("Number of recipes newly imported into the local database"),
-  skipped: zod
-    .number()
-    .describe(
-      "Number of recipes already present locally or deleted in Paprika",
-    ),
-  errors: zod
-    .array(zod.string())
-    .describe("Per-recipe error messages for any failures during import"),
 });
 
 /**

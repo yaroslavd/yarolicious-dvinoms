@@ -20,8 +20,6 @@ export const recipesTable = pgTable("recipes", {
   categories: text("categories"),
   difficulty: text("difficulty"),
   rating: integer("rating").notNull().default(0),
-  exportedToPaprika: boolean("exported_to_paprika").notNull().default(false),
-  paprikaUid: text("paprika_uid"),
   originType: text("origin_type"),
   generationPrompt: text("generation_prompt"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

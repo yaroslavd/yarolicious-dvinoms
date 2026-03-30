@@ -18,7 +18,6 @@
 //   export type Post = typeof postsTable.$inferSelect;
 
 export * from "./recipes";
-export * from "./paprika_credentials";
 export * from "./dietary_profiles";
 export * from "./recipe_versions";
 export * from "./recipe_compliance_scores";

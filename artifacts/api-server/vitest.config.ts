@@ -9,7 +9,6 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text"],
-      include: ["src/lib/paprika.ts", "src/routes/paprika.ts"],
     },
   },
 });

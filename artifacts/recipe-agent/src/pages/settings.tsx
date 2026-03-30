@@ -364,7 +364,6 @@ paths:
         </CardContent>
       </Card>
 
-
       {/* ChatGPT Integration Card */}
       <Card className="border-border/60 shadow-lg">
         <CardHeader className="bg-accent/10 border-b border-border/50 pb-6 rounded-t-xl">
@@ -517,7 +516,6 @@ paths:
           </div>
         </CardContent>
       </Card>
-
 
     </motion.div>
   );

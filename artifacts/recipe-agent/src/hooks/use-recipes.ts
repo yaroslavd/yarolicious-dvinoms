@@ -6,7 +6,6 @@ import {
   useDeleteRecipe as useOrvalDeleteRecipe,
   useImportRecipeFromUrl as useOrvalImportRecipe,
   useGenerateRecipe as useOrvalGenerateRecipe,
-  useExportRecipeToPaprika as useOrvalExportToPaprika,
   useGetRecipe,
   getListRecipesQueryKey,
   getGetRecipeQueryKey,
@@ -65,16 +64,4 @@ export function useImportRecipe() {
 
 export function useGenerateRecipe() {
   return useOrvalGenerateRecipe();
-}
-
-export function useExportToPaprika() {
-  const queryClient = useQueryClient();
-  return useOrvalExportToPaprika({
-    mutation: {
-      onSuccess: (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: getListRecipesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetRecipeQueryKey(variables.id) });
-      },
-    },
-  });
 }

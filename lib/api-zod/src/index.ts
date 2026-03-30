@@ -1,10 +1,6 @@
 export * from "./generated/api";
 
 export type {
-  CategorizationApplication,
-  CategorizationApplyResult,
-  CategorizationPreview,
-  CategorizationSuggestion,
   ChatgptApiKeyRegenResult,
   ChatgptApiKeyStatus,
   ChatgptImportBody as ChatgptImportBodyType,
@@ -22,12 +18,6 @@ export type {
   ErrorResponse,
   HealthStatus,
   ImportUrlBody,
-  PaprikaCategoriesResponse,
-  PaprikaCategory,
-  PaprikaCredentials,
-  PaprikaCredentialsInput,
-  PaprikaExportResult,
-  PaprikaImportResult,
   ProjectedScore,
   Recipe,
   RecipeInput,

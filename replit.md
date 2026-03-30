@@ -126,8 +126,6 @@ Tests: `tests/e2e/`
 ### Testing
 
 The `api-server` package uses **Vitest** for automated testing:
-- Unit tests: `src/lib/paprika.test.ts` — tests `mapPaprikaRecipeToLocal`, `fetchPaprikaRecipeList`, `fetchPaprikaRecipeDetail`
-- Integration tests: `src/routes/paprika-import.test.ts` — tests `POST /api/paprika/import` with mocked DB and Paprika API
 - Run tests: `pnpm --filter @workspace/api-server run test`
 - Config: `artifacts/api-server/vitest.config.ts`
 
@@ -145,13 +143,11 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 - **Recipe Detail**: Full recipe view with a "Dietary Compliance" section listing each profile's score (0-100%) and AI-generated reason
 - **Settings**: 
   - Dietary Profiles card — create/edit/delete named profiles (e.g. "Me", "Sarah") with free-text dietary needs
-  - Paprika Integration — link Paprika account for recipe export/sync
-  - Categorize Recipes — AI-powered Paprika category suggestions
+  - ChatGPT Integration — connect a Custom GPT for recipe imports
 
 ### Database Schema
 
 - `recipes` — saved recipes
-- `paprika_credentials` — encrypted Paprika credentials
 - `dietary_profiles` — named dietary profiles with descriptions
 - `recipe_compliance_scores` — AI-computed compliance scores (0-100) with reasons per recipe+profile pair; `versionId` is nullable (NULL = base recipe score, non-null = version-specific score)
 - `recipe_versions` — saved compliance-fix versions of recipes (label, ingredients, directions, isOriginal); each recipe has an "Original" version seeded on first use
@@ -189,5 +185,5 @@ Allows importing recipes from ChatGPT into a pending queue for review before add
 - `POST /api-key/regenerate` — generates new key, hashes + stores it, returns plaintext once
 
 ### Frontend
-- **Settings page** (`/settings`): Added ChatGPT Integration card below Paprika Integration. Shows masked API key with Regenerate button (with warning), numbered setup instructions, and copyable OpenAPI spec for Custom GPT action configuration.
+- **Settings page** (`/settings`): ChatGPT Integration card. Shows masked API key with Regenerate button (with warning), numbered setup instructions, and copyable OpenAPI spec for Custom GPT action configuration.
 - **My Recipes page** (`/`): Added collapsible `ChatgptImportsSection` at the top. Appears only when pending recipes exist, shows badge count, polls every 30 seconds. Each card shows full recipe preview (name, description, ingredients/directions expandable, image, metadata). "Add to Collection" confirms; "Dismiss" (X) deletes.

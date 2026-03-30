@@ -8,11 +8,6 @@
 
 export * from "./addCartItemsBody";
 export * from "./cartItem";
-export * from "./categorizationApplication";
-export * from "./categorizationApplyBody";
-export * from "./categorizationApplyResult";
-export * from "./categorizationPreview";
-export * from "./categorizationSuggestion";
 export * from "./chatgptApiKeyRegenResult";
 export * from "./chatgptApiKeyStatus";
 export * from "./chatgptImportBody";
@@ -35,12 +30,6 @@ export * from "./generateRecipeBody";
 export * from "./getRecipeComplianceScoresParams";
 export * from "./healthStatus";
 export * from "./importUrlBody";
-export * from "./paprikaCategoriesResponse";
-export * from "./paprikaCategory";
-export * from "./paprikaCredentials";
-export * from "./paprikaCredentialsInput";
-export * from "./paprikaExportResult";
-export * from "./paprikaImportResult";
 export * from "./projectedScore";
 export * from "./recipe";
 export * from "./recipeInput";
