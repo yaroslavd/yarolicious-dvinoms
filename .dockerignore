@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/.cache
+.git
+.local
+.replit
+replit.nix
+attached_assets
+*.log
+.env
+.env.*
+.env.local
+.env.production

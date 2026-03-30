@@ -1,0 +1,26 @@
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: artifacts/api-server/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+    restart: unless-stopped
+
+  recipe-agent:
+    build:
+      context: .
+      dockerfile: artifacts/recipe-agent/Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+      - PORT=5173
+      - BASE_PATH=/
+    depends_on:
+      - api-server
+    restart: unless-stopped

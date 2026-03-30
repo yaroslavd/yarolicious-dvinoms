@@ -91,6 +91,24 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+## CI/CD Pipeline (GitHub Actions)
+
+Four-stage pipeline: Alpha → Beta → Gamma → Production. Workflow files in `.github/workflows/`.
+
+- **Alpha** (`alpha.yml`): Runs on every push to any branch. Typecheck + unit tests + lint.
+- **Beta** (`beta.yml`): Runs on push to `beta`. Full quality suite + e2e tests + auto-deploy via `REPLIT_BETA_DEPLOY_HOOK`.
+- **Gamma** (`gamma.yml`): Runs on push to `gamma`. Full quality suite + e2e + manual approval (GitHub environment) + deploy via `REPLIT_GAMMA_DEPLOY_HOOK`.
+- **Production** (`prod.yml`): Runs on push to `main`. Full quality suite + e2e + manual approval + deploy via `REPLIT_PROD_DEPLOY_HOOK`.
+
+See `.github/ENVIRONMENTS.md` for full setup instructions (secrets, environments, branch protection).
+
+### Docker
+
+- `artifacts/api-server/Dockerfile` — Multi-stage Docker build for the API server
+- `artifacts/recipe-agent/Dockerfile` — Multi-stage Docker build for the recipe-agent frontend
+- `docker-compose.yml` — Orchestrates both services for local dev/staging
+- `.dockerignore` — Excludes node_modules, dist, .git, etc.
+
 ### E2E Testing (Playwright)
 
 End-to-end tests use Playwright with Chromium. The browser must be installed before running tests:
