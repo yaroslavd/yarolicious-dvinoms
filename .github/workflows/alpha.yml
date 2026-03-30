@@ -51,3 +51,17 @@ jobs:
 
       - name: Lint (Prettier)
         run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
+
+  promote-to-beta:
+    name: Promote to Beta
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to beta branch
+        run: git push origin HEAD:refs/heads/beta --force
